@@ -1,72 +1,120 @@
-"use client";
+import { useState } from "react";
+import { NextPage } from "next";
+import { AddLiquidityWithApprovalForm } from "~~/components/AddLiquidityWithApprovalForm";
+import { RemoveLiquidityWithApprovalForm } from "~~/components/RemoveLiquidityWithApprovalForm";
+import { SwapDashboard } from "~~/components/SwapDashboard";
+import { SwapWithApprovalBox } from "~~/components/SwapWithApprovalBox";
 
-import Link from "next/link";
-import type { NextPage } from "next";
-import { useAccount } from "wagmi";
-import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { Address } from "~~/components/scaffold-eth";
+// Contract addresses deployed on Sepolia
+const CONTRACT_ADDRESSES = {
+  TOKEN_A: "0x929300C89594B53658bc9fFf580903Fc4315c948" as const,
+  TOKEN_B: "0x11A87DAe8DB12721f5028569DA2FC2eb83b5feAd" as const,
+  SIMPLE_SWAP: "0xEE6546b600C9392BF5c54515ae80a91444F98eB1" as const,
+};
 
-const Home: NextPage = () => {
-  const { address: connectedAddress } = useAccount();
+type ActiveTab = "swap" | "liquidity" | "dashboard";
+
+/**
+ * Main DEX page component with tabbed interface for:
+ * - Token swapping
+ * - Liquidity management (add/remove)
+ * - Pool statistics dashboard
+ *
+ * @component
+ * @returns {JSX.Element} The DEX interface
+ *
+ * @example
+ * <DexPage />
+ */
+const DexPage: NextPage = () => {
+  const [activeTab, setActiveTab] = useState<ActiveTab>("swap");
+
+  const TABS = [
+    { key: "swap", label: "Swap" },
+    { key: "liquidity", label: "Liquidity" },
+    { key: "dashboard", label: "Pool Info" },
+  ] as const;
 
   return (
-    <>
-      <div className="flex items-center flex-col grow pt-10">
-        <div className="px-5">
-          <h1 className="text-center">
-            <span className="block text-2xl mb-2">Welcome to</span>
-            <span className="block text-4xl font-bold">Scaffold-ETH 2</span>
-          </h1>
-          <div className="flex justify-center items-center space-x-2 flex-col">
-            <p className="my-2 font-medium">Connected Address:</p>
-            <Address address={connectedAddress} />
-          </div>
+    <div className="flex flex-col items-center justify-start min-h-screen px-4 py-10 bg-base-100">
+      {/* Header */}
+      <header className="text-center mb-8">
+        <h1 className="text-3xl font-bold mb-2">SimpleSwap DEX</h1>
+        <p className="text-gray-500">Trade and provide liquidity in a decentralized way</p>
+      </header>
 
-          <p className="text-center text-lg">
-            Get started by editing{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/nextjs/app/page.tsx
-            </code>
-          </p>
-          <p className="text-center text-lg">
-            Edit your smart contract{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              YourContract.sol
-            </code>{" "}
-            in{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/hardhat/contracts
-            </code>
-          </p>
+      {/* Tab Navigation */}
+      <nav className="w-full max-w-md mb-8">
+        <div className="flex space-x-2 bg-base-100/20 p-1 rounded-full">
+          {TABS.map(tab => (
+            <button
+              key={tab.key}
+              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out ${
+                activeTab === tab.key
+                  ? "bg-primary text-primary-content shadow-sm"
+                  : "text-gray-500 hover:text-base-content hover:bg-base-200"
+              }`}
+              onClick={() => setActiveTab(tab.key)}
+              aria-current={activeTab === tab.key ? "page" : undefined}
+              aria-label={`Show ${tab.label} tab`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
+      </nav>
 
-        <div className="grow bg-base-300 w-full mt-16 px-8 py-12">
-          <div className="flex justify-center items-center gap-12 flex-col md:flex-row">
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <BugAntIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Tinker with your smart contract using the{" "}
-                <Link href="/debug" passHref className="link">
-                  Debug Contracts
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <MagnifyingGlassIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Explore your local transactions with the{" "}
-                <Link href="/blockexplorer" passHref className="link">
-                  Block Explorer
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+      {/* Main Content Area */}
+      <main className="w-full max-w-xl space-y-8">
+        {/* Swap Interface */}
+        {activeTab === "swap" && (
+          <section aria-labelledby="swap-section">
+            <h2 id="swap-section" className="sr-only">
+              Swap Tokens
+            </h2>
+            <SwapWithApprovalBox spender={CONTRACT_ADDRESSES.SIMPLE_SWAP} />
+          </section>
+        )}
+
+        {/* Liquidity Management */}
+        {activeTab === "liquidity" && (
+          <section aria-labelledby="liquidity-section" className="space-y-6">
+            <h2 id="liquidity-section" className="sr-only">
+              Liquidity Management
+            </h2>
+            <AddLiquidityWithApprovalForm
+              tokenA={CONTRACT_ADDRESSES.TOKEN_A}
+              tokenB={CONTRACT_ADDRESSES.TOKEN_B}
+              spender={CONTRACT_ADDRESSES.SIMPLE_SWAP}
+            />
+            <RemoveLiquidityWithApprovalForm
+              tokenA={CONTRACT_ADDRESSES.TOKEN_A}
+              tokenB={CONTRACT_ADDRESSES.TOKEN_B}
+              lpTokenContract="SimpleSwap"
+              spender={CONTRACT_ADDRESSES.SIMPLE_SWAP}
+            />
+          </section>
+        )}
+
+        {/* Pool Dashboard */}
+        {activeTab === "dashboard" && (
+          <section aria-labelledby="dashboard-section">
+            <h2 id="dashboard-section" className="text-xl font-semibold mb-4 text-center">
+              Pool Statistics
+            </h2>
+            <SwapDashboard
+              tokenA={CONTRACT_ADDRESSES.TOKEN_A}
+              tokenB={CONTRACT_ADDRESSES.TOKEN_B}
+              lpTokenContract="SimpleSwap"
+            />
+          </section>
+        )}
+      </main>
+
+      {/* Network Indicator */}
+      <footer className="mt-12 text-sm text-gray-500">Connected to Sepolia Test Network</footer>
+    </div>
   );
 };
 
-export default Home;
+export default DexPage;

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tailwindcss-animate";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
@@ -16,53 +17,62 @@
 @plugin "daisyui/theme" {
   name: "light";
 
-  --color-primary: #93bbfb;
-  --color-primary-content: #212638;
-  --color-secondary: #dae8ff;
-  --color-secondary-content: #212638;
-  --color-accent: #93bbfb;
-  --color-accent-content: #212638;
-  --color-neutral: #212638;
+  /* Modern Light DEX Theme */
+  --color-primary: #6e56f8; /* Púrpura vibrante principal */
+  --color-primary-content: #ffffff;
+  --color-secondary: #edeafd; /* Púrpura claro para fondos */
+  --color-secondary-content: #6e56f8;
+  --color-accent: #00c4b8; /* Cyan para acciones secundarias */
+  --color-accent-content: #ffffff;
+  --color-neutral: #1a1d1e; /* Negro suavizado */
   --color-neutral-content: #ffffff;
-  --color-base-100: #ffffff;
-  --color-base-200: #f4f8ff;
-  --color-base-300: #dae8ff;
-  --color-base-content: #212638;
-  --color-info: #93bbfb;
-  --color-success: #34eeb6;
-  --color-warning: #ffcf72;
-  --color-error: #ff8863;
+  --color-base-100: #ffffff; /* Fondo blanco puro */
+  --color-base-200: #f9f9fb; /* Gris ultra claro */
+  --color-base-300: #f0f0f3; /* Gris claro para separadores */
+  --color-base-content: #1a1d1e;
+  --color-info: #6e56f8;
+  --color-success: #22c55e; /* Verde esmeralda vibrante */
+  --color-warning: #f59e0b; /* Ámbar para advertencias */
+  --color-error: #ef4444; /* Rojo coral para errores */
 
-  --radius-field: 9999rem;
-  --radius-box: 1rem;
+  /* Bordes modernos */
+  --radius-field: 12px;
+  --radius-box: 16px;
   --tt-tailw: 6px;
+
+  /* Sombras sutiles */
+  --shadow-btn: 0 2px 4px rgba(110, 86, 248, 0.15);
 }
 
 @plugin "daisyui/theme" {
   name: "dark";
 
-  --color-primary: #212638;
-  --color-primary-content: #f9fbff;
-  --color-secondary: #323f61;
-  --color-secondary-content: #f9fbff;
-  --color-accent: #4969a6;
-  --color-accent-content: #f9fbff;
-  --color-neutral: #f9fbff;
-  --color-neutral-content: #385183;
-  --color-base-100: #385183;
-  --color-base-200: #2a3655;
-  --color-base-300: #212638;
-  --color-base-content: #f9fbff;
-  --color-info: #385183;
-  --color-success: #34eeb6;
-  --color-warning: #ffcf72;
-  --color-error: #ff8863;
+  /* Elegant Dark DEX Theme */
+  --color-primary: #8b7af9; /* Púrpura más brillante en oscuro */
+  --color-primary-content: #ffffff;
+  --color-secondary: #2a2845; /* Púrpura oscuro para fondos */
+  --color-secondary-content: #b5a9fd;
+  --color-accent: #00e0d2; /* Cyan neón para detalles */
+  --color-accent-content: #0f1e1d;
+  --color-neutral: #e2e2e4; /* Gris claro para textos */
+  --color-neutral-content: #1a1d1e;
+  --color-base-100: #121316; /* Fondo negro azulado */
+  --color-base-200: #1c1d22; /* Gris oscuro para cards */
+  --color-base-300: #26272d; /* Gris medio para elementos */
+  --color-base-content: #e2e2e4;
+  --color-info: #8b7af9;
+  --color-success: #10b981; /* Verde más suave */
+  --color-warning: #fbbf24; /* Ámbar más cálido */
+  --color-error: #f87171; /* Rojo suavizado */
 
-  --radius-field: 9999rem;
-  --radius-box: 1rem;
-
+  /* Bordes consistentes */
+  --radius-field: 12px;
+  --radius-box: 16px;
   --tt-tailw: 6px;
-  --tt-bg: var(--color-primary);
+  --tt-bg: var(--color-base-200);
+
+  /* Efectos de profundidad */
+  --shadow-btn: 0 2px 8px rgba(139, 122, 249, 0.25);
 }
 
 /*
