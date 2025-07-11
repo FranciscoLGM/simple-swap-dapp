@@ -6,38 +6,31 @@ import { useAccount } from "wagmi";
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { formatDecimalInput } from "~~/utils/simple-swap/parseInput";
 
-interface AddLiquidityFormProps {
+interface Props {
   tokenA: Address;
   tokenB: Address;
-  spender: Address; // The contract address that will spend the tokens (usually the router or pool)
+  spender: Address;
 }
 
 /**
- * Form component for adding liquidity to a pool with token approval flow.
- * Handles the complete process: token approval and liquidity addition.
+ * A form component for adding liquidity to a pool with token approval.
+ * Handles the approval and liquidity addition process with user feedback.
  *
- * @component
- * @param {AddLiquidityFormProps} props - Component props
- * @param {Address} props.tokenA - Address of first token in the pair
- * @param {Address} props.tokenB - Address of second token in the pair
- * @param {Address} props.spender - Contract address to approve for token spending
- *
- * @example
- * <AddLiquidityWithApprovalForm
- *   tokenA="0x123...abc"
- *   tokenB="0x456...def"
- *   spender="0x789...ghi"
- * />
+ * @param {Address} tokenA - The address of the first token in the pair
+ * @param {Address} tokenB - The address of the second token in the pair
+ * @param {Address} spender - The contract address to approve for token spending
+ * @returns {React.FC} A form component for adding liquidity
  */
-export const AddLiquidityWithApprovalForm: React.FC<AddLiquidityFormProps> = ({ tokenA, tokenB, spender }) => {
+export const AddLiquidityWithApprovalForm: React.FC<Props> = ({ tokenA, tokenB, spender }) => {
   const { address } = useAccount();
 
+  // State for token amounts and loading states
   const [amountA, setAmountA] = useState("");
   const [amountB, setAmountB] = useState("");
   const [isApproving, setIsApproving] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
 
-  // Contract write hooks
+  // Contract write hooks for approvals and adding liquidity
   const { writeContractAsync: approveA } = useScaffoldWriteContract({ contractName: "TokenA" });
   const { writeContractAsync: approveB } = useScaffoldWriteContract({ contractName: "TokenB" });
   const { writeContractAsync: addLiquidity } = useScaffoldWriteContract({ contractName: "SimpleSwap" });
@@ -45,53 +38,52 @@ export const AddLiquidityWithApprovalForm: React.FC<AddLiquidityFormProps> = ({ 
   /**
    * Handles the complete liquidity addition flow:
    * 1. Validates inputs
-   * 2. Approves both tokens
+   * 2. Approves token spending
    * 3. Adds liquidity to the pool
-   * 4. Shows feedback to the user
+   * 4. Provides user feedback via toasts and confetti
    */
   const handleAddLiquidity = async () => {
+    // Validate inputs
     if (!amountA || !amountB || !address) {
-      toast.error("Please enter both amounts");
+      toast.error("Ingresa ambos valores");
       return;
     }
 
     try {
+      // Parse amounts and set deadline (20 minutes from now)
       const parsedA = parseEther(amountA);
       const parsedB = parseEther(amountB);
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 180); // 3 minutes deadline
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 180);
 
       // Approval phase
       setIsApproving(true);
-      toast.loading("Approving tokens...");
-
-      await Promise.all([
-        approveA({ functionName: "approve", args: [spender, parsedA] }),
-        approveB({ functionName: "approve", args: [spender, parsedB] }),
-      ]);
-
-      toast.success("Tokens approved");
+      toast("Aprobando tokens...");
+      await approveA({ functionName: "approve", args: [spender, parsedA] });
+      await approveB({ functionName: "approve", args: [spender, parsedB] });
+      toast.success("Tokens aprobados");
       setIsApproving(false);
 
       // Liquidity addition phase
       setIsAdding(true);
-      const toastId = toast.loading("Adding liquidity...");
+      const toastId = toast.loading("Añadiendo liquidez...");
 
       await addLiquidity({
         functionName: "addLiquidity",
         args: [tokenA, tokenB, parsedA, parsedB, 0n, 0n, address, deadline],
       });
 
+      // Success state
       toast.dismiss(toastId);
-      toast.success("Liquidity added successfully!");
+      toast.success("Liquidez añadida");
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
       // Reset form
       setAmountA("");
       setAmountB("");
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      toast.error(`Transaction failed: ${errorMessage}`);
+    } catch (error: any) {
+      toast.error(`Error: ${error.message}`);
     } finally {
+      // Reset loading states
       setIsApproving(false);
       setIsAdding(false);
     }
@@ -102,31 +94,25 @@ export const AddLiquidityWithApprovalForm: React.FC<AddLiquidityFormProps> = ({ 
       <div className="space-y-4">
         {/* Token A Input */}
         <div className="bg-base-300 p-4 rounded-xl">
-          <label className="text-sm text-gray-400">Amount of TokenA (TKA)</label>
+          <label className="text-sm text-gray-400">Cantidad de TokenA (TKA)</label>
           <input
             className="input input-bordered bg-base-100 w-full mt-1"
             type="number"
             placeholder="0.0"
             value={amountA}
             onChange={e => setAmountA(formatDecimalInput(e.target.value))}
-            min="0"
-            step="any"
-            disabled={isApproving || isAdding}
           />
         </div>
 
         {/* Token B Input */}
         <div className="bg-base-300 p-4 rounded-xl">
-          <label className="text-sm text-gray-400">Amount of TokenB (TKB)</label>
+          <label className="text-sm text-gray-400">Cantidad de TokenB (TKB)</label>
           <input
             className="input input-bordered bg-base-100 w-full mt-1"
             type="number"
             placeholder="0.0"
             value={amountB}
             onChange={e => setAmountB(formatDecimalInput(e.target.value))}
-            min="0"
-            step="any"
-            disabled={isApproving || isAdding}
           />
         </div>
 
@@ -134,10 +120,9 @@ export const AddLiquidityWithApprovalForm: React.FC<AddLiquidityFormProps> = ({ 
         <button
           className="btn btn-primary w-full mt-2 py-3 text-lg"
           onClick={handleAddLiquidity}
-          disabled={!amountA || !amountB || isApproving || isAdding || !address}
+          disabled={!amountA || !amountB || isApproving || isAdding}
         >
-          {isApproving ? "Approving..." : isAdding ? "Adding..." : "Add Liquidity"}
-          {(isApproving || isAdding) && <span className="loading loading-spinner ml-2" />}
+          {isApproving || isAdding ? <span className="loading loading-spinner" /> : "Añadir liquidez"}
         </button>
       </div>
     </div>

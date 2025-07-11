@@ -3,33 +3,32 @@ import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { formatTokenAmount } from "~~/utils/simple-swap/formatTokenAmount";
 
 /**
- * Custom hook to fetch and format a token balance by contract name.
- * Automatically watches for balance changes and updates.
+ * Custom hook to fetch and format a user's token balance.
  *
- * @param {string} contractName - Name of the contract in deployedContracts (e.g., "TokenA", "SimpleSwap")
- * @param {number} [decimals=18] - Token decimals (default: 18)
- * @returns {string} Formatted token balance of the connected user
+ * Features:
+ * - Automatically watches for balance changes
+ * - Formats the raw balance into a human-readable string
+ * - Handles different token decimals
+ *
+ * @param {string} contractName - Nombre del contrato en deployedContracts (ej: "TokenA", "TokenB", "SimpleSwap")
+ * @param {number} [decimals=18] - Decimales del token (por defecto 18)
+ * @returns {string} Un string legible del balance del usuario actual
  *
  * @example
- * // Returns formatted balance of TokenA
- * const tokenABalance = useFormattedBalance("TokenA");
- *
- * @example
- * // Returns formatted balance with custom decimals
- * const usdcBalance = useFormattedBalance("USDC", 6);
- *
- * @throws Will throw if used without a connected wallet
- * @note Requires wagmi's useAccount and a connected wallet
+ * const balance = useFormattedBalance("TokenA");
+ * console.log(balance); // "1.23"
  */
-export const useFormattedBalance = (contractName: string, decimals: number = 18): string => {
+export const useFormattedBalance = (contractName: string, decimals = 18) => {
   const { address } = useAccount();
 
+  // Fetch raw balance from contract
   const { data: balance } = useScaffoldReadContract({
     contractName,
     functionName: "balanceOf",
-    args: [address!], // Non-null assertion as we expect this to be used with connected wallet
-    watch: true, // Auto-updates on balance changes
+    args: [address!], // Non-null assertion since we only want balance when connected
+    watch: true, // Auto-refresh when balance changes
   });
 
+  // Format raw balance into human-readable string
   return formatTokenAmount(balance, decimals);
 };

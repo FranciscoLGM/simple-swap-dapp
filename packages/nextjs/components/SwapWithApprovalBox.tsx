@@ -10,50 +10,43 @@ import { formatDecimalInput } from "~~/utils/simple-swap/parseInput";
 
 // Available tokens for swapping
 const AVAILABLE_TOKENS: TokenOption[] = [
-  {
-    symbol: "TKA",
-    name: "TokenA",
-    address: "0x929300C89594B53658bc9fFf580903Fc4315c948",
-  },
-  {
-    symbol: "TKB",
-    name: "TokenB",
-    address: "0x11A87DAe8DB12721f5028569DA2FC2eb83b5feAd",
-  },
+  { symbol: "TKA", name: "TokenA", address: "0xc05C57BA153A2903977cdaa0E54e58d45ac349ED" },
+  { symbol: "TKB", name: "TokenB", address: "0x84B42E3fE2312fBf9F1C7e7ad80BdF67bBE09Ac4" },
 ];
 
-interface SwapBoxProps {
-  spender: Address; // The contract address that needs token approval (usually the router)
+interface Props {
+  spender: Address; // The contract address that needs token approval
 }
 
 /**
- * Swap component with built-in token approval flow.
- * Handles token selection, amount input, price calculation, approval, and swapping.
+ * Swap box component that handles token swapping with approval flow.
+ * Features include:
+ * - Token selection for both input and output
+ * - Automatic price calculation based on reserves
+ * - Token approval when needed
+ * - Slippage protection
+ * - Visual feedback with toasts and confetti
  *
- * @component
- * @param {SwapBoxProps} props - Component props
- * @param {Address} props.spender - Contract address that needs token approval
- *
- * @example
- * <SwapWithApprovalBox spender="0x123...abc" />
+ * @param {Address} spender - The contract address that needs token approval
+ * @returns {React.FC} A complete swap interface component
  */
-export const SwapWithApprovalBox: React.FC<SwapBoxProps> = ({ spender }) => {
+export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
   const { address } = useAccount();
 
   // Token selection state
-  const [tokenIn, setTokenIn] = useState<TokenOption>(AVAILABLE_TOKENS[0]);
-  const [tokenOut, setTokenOut] = useState<TokenOption>(AVAILABLE_TOKENS[1]);
+  const [tokenIn, setTokenIn] = useState(AVAILABLE_TOKENS[0]);
+  const [tokenOut, setTokenOut] = useState(AVAILABLE_TOKENS[1]);
   const [selecting, setSelecting] = useState<"in" | "out" | null>(null);
 
   // Amount state
-  const [amountIn, setAmountIn] = useState<string>("");
-  const [amountOut, setAmountOut] = useState<string>("");
+  const [amountIn, setAmountIn] = useState("");
+  const [amountOut, setAmountOut] = useState("");
   const [lastEditedInput, setLastEditedInput] = useState<"in" | "out">("in");
 
-  // Transaction state
-  const [allowanceOk, setAllowanceOk] = useState<boolean>(false);
-  const [isApproving, setIsApproving] = useState<boolean>(false);
-  const [isSwapping, setIsSwapping] = useState<boolean>(false);
+  // Approval and swap state
+  const [allowanceOk, setAllowanceOk] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isSwapping, setIsSwapping] = useState(false);
 
   // Constants
   const slippage = 0.005; // 0.5% slippage tolerance
@@ -63,7 +56,7 @@ export const SwapWithApprovalBox: React.FC<SwapBoxProps> = ({ spender }) => {
   const { writeContractAsync: approveAsync } = useScaffoldWriteContract({ contractName: tokenIn.name });
   const { writeContractAsync: swapAsync } = useScaffoldWriteContract({ contractName: "SimpleSwap" });
 
-  // Read token allowance
+  // Read token allowance for the spender
   const { data: allowance } = useScaffoldReadContract({
     contractName: tokenIn.name,
     functionName: "allowance",
@@ -71,7 +64,7 @@ export const SwapWithApprovalBox: React.FC<SwapBoxProps> = ({ spender }) => {
     watch: true,
   });
 
-  // Read pool reserves
+  // Read pool reserves for the token pair
   const { data: reserves } = useScaffoldReadContract({
     contractName: "SimpleSwap",
     functionName: "getReserves",
@@ -92,11 +85,10 @@ export const SwapWithApprovalBox: React.FC<SwapBoxProps> = ({ spender }) => {
 
     const reserveIn = reserves[0];
     const reserveOut = reserves[1];
-
-    // Skip calculation if reserves are zero
     if (reserveIn === 0n || reserveOut === 0n) return;
 
     if (lastEditedInput === "in") {
+      // Calculate output amount with slippage when input changes
       const input = parseEther(amountIn || "0");
       const out = (input * reserveOut) / (reserveIn + input);
       const outWithSlippage = out - (out * BigInt(Math.floor(slippage * 10000))) / 10000n;
@@ -104,6 +96,7 @@ export const SwapWithApprovalBox: React.FC<SwapBoxProps> = ({ spender }) => {
     }
 
     if (lastEditedInput === "out") {
+      // Calculate required input amount with slippage when output changes
       const output = parseEther(amountOut || "0");
       const input = (output * reserveIn) / (reserveOut - output);
       const inputWithSlippage = input + (input * BigInt(Math.floor(slippage * 10000))) / 10000n;
@@ -112,15 +105,15 @@ export const SwapWithApprovalBox: React.FC<SwapBoxProps> = ({ spender }) => {
   }, [reserves, amountIn, amountOut, tokenIn, tokenOut, lastEditedInput]);
 
   /**
-   * Handles the swap transaction flow:
-   * 1. Checks form validity
+   * Handles the complete swap flow:
+   * 1. Validates the form
    * 2. Approves token if needed
-   * 3. Executes swap
-   * 4. Shows transaction feedback
+   * 3. Executes the swap
+   * 4. Shows feedback to the user
    */
   const handleSwap = async () => {
     if (!isFormValid || !address) {
-      toast.error("Invalid form data");
+      toast.error("Formulario inválido.");
       return;
     }
 
@@ -132,34 +125,34 @@ export const SwapWithApprovalBox: React.FC<SwapBoxProps> = ({ spender }) => {
       // Approval phase if needed
       if (!allowanceOk) {
         setIsApproving(true);
-        toast.loading("Approving token...");
+        toast("Aprobando token...");
         await approveAsync({
           functionName: "approve",
           args: [spender, parsedAmount],
         });
-        toast.success("Token approved");
+        toast.success("Token aprobado");
       }
 
-      // Swap phase
+      // Swap execution phase
       setIsApproving(false);
       setIsSwapping(true);
-      const toastId = toast.loading("Processing swap...");
+      const toastId = toast.loading("Realizando swap...");
 
       await swapAsync({
         functionName: "swapExactTokensForTokens",
         args: [parsedAmount, parsedMinOut, [tokenIn.address, tokenOut.address], address, deadline],
       });
 
+      // Success state
       toast.dismiss(toastId);
-      toast.success("Swap successful!");
+      toast.success("Swap exitoso");
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
       // Reset form
       setAmountIn("");
       setAmountOut("");
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Transaction failed";
-      toast.error(errorMessage);
+    } catch (e: any) {
+      toast.error(`Error: ${e.message}`);
     } finally {
       setIsApproving(false);
       setIsSwapping(false);
@@ -178,9 +171,9 @@ export const SwapWithApprovalBox: React.FC<SwapBoxProps> = ({ spender }) => {
   return (
     <div className="card rounded-2xl shadow-xl bg-base-200 p-6 space-y-4 max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="space-y-2">
-        {/* Input Token Section */}
+        {/* INPUT TOKEN SECTION */}
         <div className="bg-base-300 p-4 rounded-xl">
-          <label className="text-sm text-gray-400">From</label>
+          <label className="text-sm text-gray-400">Vender</label>
           <div className="flex items-center gap-2 mt-1">
             <input
               className="input input-bordered bg-base-100 text-lg w-full"
@@ -192,34 +185,30 @@ export const SwapWithApprovalBox: React.FC<SwapBoxProps> = ({ spender }) => {
               }}
               type="number"
               min="0"
-              disabled={isApproving || isSwapping}
             />
-            <button
-              className="btn btn-outline w-32 flex items-center gap-2"
-              onClick={() => setSelecting("in")}
-              disabled={isApproving || isSwapping}
-            >
-              <Image src={`/tokens/${tokenIn.symbol}.svg`} className="w-5 h-5" alt={tokenIn.symbol} />
+            <button className="btn btn-outline w-32 flex items-center gap-2" onClick={() => setSelecting("in")}>
+              <Image
+                src={`/tokens/${tokenIn.symbol}.svg`}
+                className="w-5 h-5"
+                alt={tokenIn.symbol}
+                width={40}
+                height={40}
+              />
               {tokenIn.symbol}
             </button>
           </div>
         </div>
 
-        {/* Switch Tokens Button */}
+        {/* TOKEN SWITCH BUTTON */}
         <div className="flex justify-center">
-          <button
-            className="btn btn-circle btn-sm"
-            onClick={switchTokens}
-            disabled={isApproving || isSwapping}
-            aria-label="Switch tokens"
-          >
-            <Image src="/tokens/arrow.svg" alt="Switch tokens" />
+          <button className="btn btn-circle btn-sm" onClick={switchTokens}>
+            <Image src="/tokens/arrow.svg" alt="arrow" width={12.5} height={20} />
           </button>
         </div>
 
-        {/* Output Token Section */}
+        {/* OUTPUT TOKEN SECTION */}
         <div className="bg-base-300 p-4 rounded-xl">
-          <label className="text-sm text-gray-400">To</label>
+          <label className="text-sm text-gray-400">Comprar</label>
           <div className="flex items-center gap-2 mt-1">
             <input
               className="input input-bordered bg-base-100 text-lg w-full"
@@ -231,20 +220,21 @@ export const SwapWithApprovalBox: React.FC<SwapBoxProps> = ({ spender }) => {
               }}
               type="number"
               min="0"
-              disabled={isApproving || isSwapping}
             />
-            <button
-              className="btn btn-outline w-32 flex items-center gap-2"
-              onClick={() => setSelecting("out")}
-              disabled={isApproving || isSwapping}
-            >
-              <Image src={`/tokens/${tokenOut.symbol}.svg`} className="w-5 h-5" alt={tokenOut.symbol} />
+            <button className="btn btn-outline w-32 flex items-center gap-2" onClick={() => setSelecting("out")}>
+              <Image
+                src={`/tokens/${tokenOut.symbol}.svg`}
+                className="w-5 h-5"
+                alt={tokenOut.symbol}
+                width={40}
+                height={40}
+              />
               {tokenOut.symbol}
             </button>
           </div>
         </div>
 
-        {/* Price Information */}
+        {/* PRICE INDICATOR */}
         <p className="text-xs text-center text-gray-400 mt-2">
           1 {tokenIn.symbol} ≈{" "}
           {reserves && reserves[0] !== 0n && reserves[1] !== 0n
@@ -253,28 +243,30 @@ export const SwapWithApprovalBox: React.FC<SwapBoxProps> = ({ spender }) => {
           {tokenOut.symbol}
         </p>
 
-        {/* Error Message for Same Token */}
+        {/* ERROR MESSAGE FOR SAME TOKEN SELECTION */}
         {tokenIn.address === tokenOut.address && (
-          <p className="text-error text-sm mt-2">❌ Cannot select the same token for both sides</p>
+          <p className="text-error text-sm mt-2">❌ No puedes seleccionar el mismo token para ambos lados.</p>
         )}
 
-        {/* Swap Button */}
+        {/* SWAP BUTTON */}
         <button
           className="btn btn-primary w-full py-3 text-lg"
           disabled={!isFormValid || isApproving || isSwapping}
           onClick={handleSwap}
         >
-          {isApproving ? "Approving..." : isSwapping ? "Swapping..." : "Swap"}
-          {(isApproving || isSwapping) && <span className="loading loading-spinner loading-sm ml-2" />}
+          {isApproving || isSwapping ? <span className="loading loading-spinner loading-sm" /> : "Intercambiar"}
         </button>
 
-        {/* Token Selection Modal */}
+        {/* TOKEN SELECTION MODAL */}
         <TokenSelectorModal
           isOpen={selecting !== null}
           onClose={() => setSelecting(null)}
           onSelect={token => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            selecting === "in" ? setTokenIn(token) : setTokenOut(token);
+            if (selecting === "in") {
+              setTokenIn(token);
+            } else {
+              setTokenOut(token);
+            }
           }}
           tokenList={AVAILABLE_TOKENS}
         />

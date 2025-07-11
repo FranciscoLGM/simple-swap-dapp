@@ -2,38 +2,34 @@ import { formatUnits } from "viem";
 
 /**
  * Formats a token amount into a human-readable string.
- * Displays as integer if whole number, otherwise limits to specified precision.
  *
- * @param {bigint | undefined} value - The token amount in smallest units (wei/satoshi)
- * @param {number} [decimals=18] - Token decimals (default: 18)
- * @param {number} [precision=2] - Maximum decimal places to show (default: 2)
+ * Features:
+ * - Handles undefined/zero values gracefully
+ * - Shows no decimals for integer values
+ * - Limits decimal places for fractional values
+ * - Configurable decimal precision
+ *
+ * @param {bigint | undefined} value - Valor bigint en base `decimals` (undefined treated as 0)
+ * @param {number} [decimals=18] - Cantidad de decimales del token (por defecto: 18)
+ * @param {number} [precision=2] - Cantidad máxima de decimales visibles (por defecto: 2)
  * @returns {string} Formatted token amount as string
  *
  * @example
- * // Returns "1"
- * formatTokenAmount(1000000000000000000n);
- *
- * @example
- * // Returns "1.2345"
- * formatTokenAmount(123456789n, 8, 4);
- *
- * @example
- * // Returns "0" for undefined input
- * formatTokenAmount(undefined);
+ * formatTokenAmount(1234567890000000000n); // "1.23" (18 decimals)
+ * formatTokenAmount(1000000000000000000n); // "1" (integer)
+ * formatTokenAmount(1234567890000000000n, 18, 4); // "1.2345"
  */
-export function formatTokenAmount(value?: bigint, decimals: number = 18, precision: number = 2): string {
-  // Handle undefined/zero value
+export function formatTokenAmount(value?: bigint, decimals = 18, precision = 2): string {
+  // Handle undefined or zero values
   if (!value) return "0";
 
-  // Convert from smallest units to token amount
-  const rawAmount = formatUnits(value, decimals);
-  const numericAmount = Number(rawAmount);
+  // Convert from smallest units to token units
+  const raw = formatUnits(value, decimals);
+  const num = Number(raw);
 
-  // Return integer representation if whole number
-  if (Number.isInteger(numericAmount)) {
-    return numericAmount.toString();
-  }
+  // Return integer values without decimals
+  if (Number.isInteger(num)) return num.toString();
 
-  // Format with limited decimal places
-  return numericAmount.toFixed(precision).replace(/\.?0+$/, "");
+  // Format fractional values with specified precision
+  return num.toFixed(precision);
 }
