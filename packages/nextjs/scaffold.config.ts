@@ -39,7 +39,8 @@ const scaffoldConfig = {
   // .env.local for local testing, and in the Vercel/system env config for live apps.
   walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "3a8170812b534d0ff9d794f19a901d64",
 
-  // Only show the Burner Wallet when running on hardhat network
+  // If you want to use the burner wallet, you can set this to true, this will only work on local networks.
+  // It will not work on testnets or mainnets.
   onlyLocalBurnerWallet: process.env.NEXT_PUBLIC_ENABLE_BURNER_WALLET === "true",
 } as const satisfies ScaffoldConfig;
 
