@@ -131,14 +131,14 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
   };
 
   return (
-    <div className="card bg-base-200 p-6 rounded-2xl shadow-lg max-w-md w-full mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Agregar Liquidez</h2>
+    <div className="w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="card bg-base-200 shadow-xl rounded-2xl p-6 space-y-4">
+        <h2 className="text-xl font-semibold text-center">Agregar Liquidez</h2>
 
         <div className="form-control">
-          <label className="label">Cantidad de TKA</label>
+          <label className="label text-sm text-gray-400">Cantidad de TKA</label>
           <input
-            className="input input-bordered w-full"
+            className="input input-bordered w-full text-lg"
             type="number"
             placeholder="0.0"
             value={amountA}
@@ -149,9 +149,9 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
         </div>
 
         <div className="form-control">
-          <label className="label">Cantidad de TKB</label>
+          <label className="label text-sm text-gray-400">Cantidad de TKB</label>
           <input
-            className="input input-bordered w-full"
+            className="input input-bordered w-full text-lg"
             type="number"
             placeholder="0.0"
             value={amountB}
@@ -162,7 +162,7 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
         </div>
 
         <button
-          className="btn btn-primary w-full"
+          className="btn btn-primary w-full py-3 text-lg"
           onClick={handleAddLiquidity}
           disabled={!isFormValid || isApproving || isAdding}
         >
