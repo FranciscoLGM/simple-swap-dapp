@@ -91,7 +91,7 @@ export const RemoveLiquidityWithApprovalForm = ({ tokenA, tokenB, lpTokenContrac
     const min = maxA < maxB ? maxA : maxB;
 
     setMaxLPToWithdraw(formatUnits(min, 18));
-  }, [reserves, balanceA, balanceB, totalSupply]);
+  }, [reserves, balanceA, balanceB, totalSupply, PROTOCOL_LOCKED_LP]);
 
   useEffect(() => {
     try {
