@@ -10,12 +10,12 @@ import "~~/styles/globals.css";
 export const metadata: Metadata = {
   title: "SimpleSwap DEX",
   description: "Intercambia tokens, añade liquidez y explora pools con una interfaz moderna estilo Uniswap.",
-  metadataBase: new URL("https://simpleswap.xyz"),
+  metadataBase: new URL("https://simpleswap-dex.vercel.app/"),
 
   openGraph: {
     title: "SimpleSwap DEX",
     description: "Un DEX moderno y elegante para intercambiar tokens en Sepolia.",
-    url: "https://simpleswap.xyz",
+    url: "https://simpleswap-dex.vercel.app/",
     siteName: "SimpleSwap",
     images: [
       {
