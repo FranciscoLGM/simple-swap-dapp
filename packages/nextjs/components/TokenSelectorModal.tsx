@@ -1,10 +1,7 @@
-import { FC, useEffect } from "react";
+import { FC, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Address } from "viem";
 
-/**
- * Representa un token en la lista
- */
 export interface TokenOption {
   symbol: string;
   name: string;
@@ -19,9 +16,12 @@ interface Props {
 }
 
 /**
- * Modal visualmente optimizado para selección de tokens.
+ * Modal accesible y optimizado para seleccionar tokens.
  */
 export const TokenSelectorModal: FC<Props> = ({ isOpen, onClose, onSelect, tokenList }) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Escape key to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -29,6 +29,18 @@ export const TokenSelectorModal: FC<Props> = ({ isOpen, onClose, onSelect, token
     if (isOpen) document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
+
+  // Focus trap when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      modalRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  const handleSelect = (token: TokenOption) => {
+    onSelect(token);
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -39,20 +51,20 @@ export const TokenSelectorModal: FC<Props> = ({ isOpen, onClose, onSelect, token
       aria-modal="true"
       aria-label="Selector de token"
     >
-      <div className="bg-base-100 p-6 rounded-2xl shadow-lg w-full max-w-sm space-y-6 animate-in slide-in-from-bottom-4 duration-300">
+      <div
+        ref={modalRef}
+        tabIndex={-1}
+        className="bg-base-100 p-6 rounded-2xl shadow-xl w-full max-w-sm space-y-6 animate-in slide-in-from-bottom-4 duration-300 outline-none"
+      >
         <h3 className="text-lg font-semibold">Seleccionar token</h3>
 
         <div className="flex flex-col gap-3">
           {tokenList.map(token => (
             <button
               key={token.symbol}
-              className="btn btn-outline justify-between items-center px-4 py-3 rounded-lg hover:bg-base-200 transition whitespace-nowrap"
-              onClick={() => {
-                onSelect(token);
-                onClose();
-              }}
+              onClick={() => handleSelect(token)}
+              className="btn btn-outline justify-between items-center px-4 py-3 rounded-lg hover:bg-base-200 focus-visible:ring focus-visible:ring-primary transition"
             >
-              {/* Columna izquierda: icono + nombre/símbolo */}
               <div className="flex items-center gap-3 min-w-0">
                 <Image
                   src={`/tokens/${token.symbol}.svg`}
@@ -68,7 +80,6 @@ export const TokenSelectorModal: FC<Props> = ({ isOpen, onClose, onSelect, token
                 </div>
               </div>
 
-              {/* Dirección truncada (visible en sm+) */}
               <span className="text-xs text-gray-400 hidden sm:inline-block">
                 {token.address.slice(0, 6)}...{token.address.slice(-4)}
               </span>

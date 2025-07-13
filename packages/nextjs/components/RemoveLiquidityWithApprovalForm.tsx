@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import confetti from "canvas-confetti";
 import toast from "react-hot-toast";
-import { formatUnits, parseEther } from "viem";
+import { Address, formatUnits, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useGlobalErrorToast } from "~~/hooks/simple-swap/useGlobalErrorToast";
@@ -9,9 +9,9 @@ import { formatDecimalInput } from "~~/utils/simple-swap/parseInput";
 import { parseViemErrorToMessage } from "~~/utils/simple-swap/parseViemErrorToMessage";
 
 interface Props {
-  tokenA: string;
-  tokenB: string;
-  lpTokenContract: string;
+  tokenA: Address;
+  tokenB: Address;
+  lpTokenContract: "SimpleSwap";
   spender: string;
 }
 
@@ -27,10 +27,14 @@ export const RemoveLiquidityWithApprovalForm = ({ tokenA, tokenB, lpTokenContrac
   const isFormValid = Number(liquidity) > 0;
   const PROTOCOL_LOCKED_LP = 1_000_000_000_000n;
 
-  const { writeContractAsync: approveLP } = useScaffoldWriteContract({ contractName: lpTokenContract });
-  const { writeContractAsync: removeLiquidity } = useScaffoldWriteContract({ contractName: "SimpleSwap" });
+  const { writeContractAsync: approveLP } = useScaffoldWriteContract({
+    contractName: lpTokenContract,
+  });
 
-  // 📊 LP token allowance
+  const { writeContractAsync: removeLiquidity } = useScaffoldWriteContract({
+    contractName: "SimpleSwap",
+  });
+
   const { data: allowance, error: allowanceError } = useScaffoldReadContract({
     contractName: lpTokenContract,
     functionName: "allowance",
@@ -38,14 +42,12 @@ export const RemoveLiquidityWithApprovalForm = ({ tokenA, tokenB, lpTokenContrac
     watch: true,
   });
 
-  // 📈 Total LP supply
   const { data: totalSupply, error: totalSupplyError } = useScaffoldReadContract({
     contractName: lpTokenContract,
     functionName: "totalSupply",
     watch: true,
   });
 
-  // 💧 Pool reserves (contables)
   const { data: reserves, error: reservesError } = useScaffoldReadContract({
     contractName: "SimpleSwap",
     functionName: "getReserves",
@@ -53,7 +55,6 @@ export const RemoveLiquidityWithApprovalForm = ({ tokenA, tokenB, lpTokenContrac
     watch: true,
   });
 
-  // 📦 Balances REALES del contrato SimpleSwap
   const { data: balanceA, error: errorBalanceA } = useScaffoldReadContract({
     contractName: "TokenA",
     functionName: "balanceOf",
@@ -68,14 +69,12 @@ export const RemoveLiquidityWithApprovalForm = ({ tokenA, tokenB, lpTokenContrac
     watch: true,
   });
 
-  // 📣 Errores reactivos
   useGlobalErrorToast(allowanceError);
   useGlobalErrorToast(totalSupplyError);
   useGlobalErrorToast(reservesError);
   useGlobalErrorToast(errorBalanceA);
   useGlobalErrorToast(errorBalanceB);
 
-  // 🧠 Máximo real removible
   useEffect(() => {
     if (!reserves || !balanceA || !balanceB || !totalSupply) return;
 
@@ -92,9 +91,8 @@ export const RemoveLiquidityWithApprovalForm = ({ tokenA, tokenB, lpTokenContrac
     const min = maxA < maxB ? maxA : maxB;
 
     setMaxLPToWithdraw(formatUnits(min, 18));
-  }, [reserves, balanceA, balanceB, totalSupply, PROTOCOL_LOCKED_LP]);
+  }, [reserves, balanceA, balanceB, totalSupply]);
 
-  // ✅ Validar allowance
   useEffect(() => {
     try {
       if (!allowance || !liquidity || isNaN(Number(liquidity))) return setAllowanceOk(false);
@@ -182,7 +180,7 @@ export const RemoveLiquidityWithApprovalForm = ({ tokenA, tokenB, lpTokenContrac
         </div>
 
         <button
-          className="btn btn-primary w-full"
+          className="btn btn-primary w-full py-3 text-lg"
           onClick={handleRemoveLiquidity}
           disabled={!isFormValid || isApproving || isRemoving}
         >

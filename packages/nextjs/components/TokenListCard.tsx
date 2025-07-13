@@ -9,7 +9,7 @@ interface TokenInfo {
   symbol: string;
   name: string;
   address: string;
-  contractName: string;
+  contractName: "TokenA" | "TokenB";
   decimals?: number;
 }
 
@@ -19,7 +19,11 @@ interface TokenBalanceItemProps {
 }
 
 const TokenBalanceItem: FC<TokenBalanceItemProps> = ({ token, userAddress }) => {
-  const { data: balance, error } = useScaffoldReadContract({
+  const {
+    data: balance,
+    error,
+    isLoading,
+  } = useScaffoldReadContract({
     contractName: token.contractName,
     functionName: "balanceOf",
     args: [userAddress],
@@ -28,14 +32,14 @@ const TokenBalanceItem: FC<TokenBalanceItemProps> = ({ token, userAddress }) => 
 
   useGlobalErrorToast(error);
 
-  const formattedBalance = formatTokenAmount(balance, token.decimals || 18, 6);
+  const formattedBalance = isLoading ? "..." : formatTokenAmount(balance, token.decimals || 18, 6);
 
   return (
     <li className="flex items-center justify-between bg-base-300 p-4 rounded-xl">
       <div className="flex items-center gap-3 min-w-0">
         <Image src={`/tokens/${token.symbol}.svg`} alt={token.symbol} width={24} height={24} className="shrink-0" />
         <div className="text-left truncate min-w-0">
-          <div className="font-semibold">{token.name}</div>
+          <div className="font-semibold truncate">{token.name}</div>
           <div className="text-xs text-gray-400">{token.symbol}</div>
           <div className="text-[10px] text-gray-400 truncate">
             {token.address.slice(0, 6)}...{token.address.slice(-4)}
@@ -53,14 +57,20 @@ interface TokenListCardProps {
   title?: string;
 }
 
-export const TokenListCard: FC<TokenListCardProps> = ({ tokens, title = "Tus tokens" }) => {
+export const TokenListCard: FC<TokenListCardProps> = ({ tokens, title = "Tus Tokens" }) => {
   const { address } = useAccount();
 
-  if (!address) return null;
+  if (!address) {
+    return (
+      <div className="card bg-base-200 p-6 rounded-2xl shadow-xl max-w-md w-full mx-auto text-center">
+        <p className="text-sm text-gray-500">Conecta tu wallet para ver tus balances.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="card bg-base-200 p-6 rounded-2xl shadow-xl max-w-md mx-auto">
-      <h3 className="text-lg font-semibold mb-4">{title}</h3>
+    <div className="card bg-base-200 p-6 rounded-2xl shadow-xl max-w-md w-full mx-auto space-y-4">
+      <h3 className="text-lg font-semibold text-center">{title}</h3>
       <ul className="space-y-3">
         {tokens.map(token => (
           <TokenBalanceItem key={token.symbol} token={token} userAddress={address} />

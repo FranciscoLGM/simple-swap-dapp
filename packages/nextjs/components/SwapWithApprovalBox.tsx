@@ -15,6 +15,13 @@ const AVAILABLE_TOKENS: TokenOption[] = [
   { symbol: "TKB", name: "TokenB", address: "0x84B42E3fE2312fBf9F1C7e7ad80BdF67bBE09Ac4" },
 ];
 
+// ⚠️ Fix tipos para contractName
+type TokenContractName = "TokenA" | "TokenB";
+const symbolToContractName: Record<string, TokenContractName> = {
+  TKA: "TokenA",
+  TKB: "TokenB",
+};
+
 interface Props {
   spender: Address;
 }
@@ -38,11 +45,16 @@ export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
   const isSameToken = tokenIn.address === tokenOut.address;
   const isFormValid = Number(amountIn) > 0 && !isSameToken;
 
-  const { writeContractAsync: approve } = useScaffoldWriteContract({ contractName: tokenIn.name });
+  const tokenInContractName = symbolToContractName[tokenIn.symbol];
+
+  const { writeContractAsync: approve } = useScaffoldWriteContract({
+    contractName: tokenInContractName,
+  });
+
   const { writeContractAsync: swap } = useScaffoldWriteContract({ contractName: "SimpleSwap" });
 
   const { data: allowance, error: allowanceError } = useScaffoldReadContract({
-    contractName: tokenIn.name,
+    contractName: tokenInContractName,
     functionName: "allowance",
     args: [address!, spender],
     watch: true,

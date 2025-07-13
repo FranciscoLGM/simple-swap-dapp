@@ -87,7 +87,7 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
       </div>
 
       {/* Tab content */}
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-4">
+      <div className="space-y-4 transition-opacity duration-300 animate-in fade-in slide-in-from-bottom-4">
         {activeTab === "pool" && (
           <div className="card bg-base-200 p-6 rounded-2xl shadow-xl space-y-3">
             <div className="bg-base-300 p-4 rounded-xl">
