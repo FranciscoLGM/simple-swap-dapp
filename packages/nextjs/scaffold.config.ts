@@ -41,7 +41,7 @@ const scaffoldConfig = {
 
   // If you want to use the burner wallet, you can set this to true, this will only work on local networks.
   // It will not work on testnets or mainnets.
-  onlyLocalBurnerWallet: process.env.NEXT_PUBLIC_ENABLE_BURNER_WALLET === "true",
+  onlyLocalBurnerWallet: typeof window !== "undefined" && window.location.hostname === "localhost",
 } as const satisfies ScaffoldConfig;
 
 export default scaffoldConfig;
