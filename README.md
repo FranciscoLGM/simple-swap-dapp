@@ -1,80 +1,159 @@
-# 🏗 Scaffold-ETH 2
+# 🦄 SimpleSwap DEX
 
-<h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Documentation</a> |
-  <a href="https://scaffoldeth.io">Website</a>
-</h4>
+**SimpleSwap** is a modern decentralized exchange (DEX) built with [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2), inspired by **Uniswap V2**. It enables users to:
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
+- 🔄 Swap ERC-20 tokens (`TokenA` ↔ `TokenB`)
+- 💧 Add or remove liquidity from the pool
+- 📊 Explore real-time pool and token metrics
+- ⚡ Enjoy a fast and intuitive Web3 experience
 
-⚙️ Built using NextJS, RainbowKit, Hardhat, Wagmi, Viem, and Typescript.
+---
 
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
-- 🧱 [**Components**](https://docs.scaffoldeth.io/components/): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
+## 🚀 Features
 
-![Debug Contracts tab](https://github.com/scaffold-eth/scaffold-eth-2/assets/55535804/b237af0c-5027-4849-a5c1-2e31495cccb1)
+- ✅ Swap with slippage control and real-time price preview
+- ✅ Integrated token approvals (only when needed)
+- ✅ Add & remove liquidity with approval + feedback
+- ✅ Animated dashboard with pool stats and token balances
+- ✅ Clean responsive UI with modals, tabs, transitions
+- ✅ Interacts with deployed contracts on **Sepolia**
 
-## Requirements
+---
 
-Before you begin, you need to install the following tools:
+## 🛠️ Tech Stack
 
-- [Node (>= v20.18.3)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
+| Tool / Library             | Role                                   |
+| -------------------------- | -------------------------------------- |
+| **Scaffold-ETH 2**         | Smart contract + frontend framework    |
+| **Next.js (App Router)**   | Frontend structure & routing           |
+| **Hardhat + Viem**         | Contract development and interaction   |
+| **Tailwind CSS + DaisyUI** | Design system + themes (Uniswap-style) |
+| **RainbowKit + Wagmi**     | Wallet connection + blockchain hooks   |
+| **React Hot Toast**        | Feedback toasts (success/errors)       |
+| **Canvas Confetti**        | 🎉 Confetti on successful actions      |
 
-## Quickstart
+---
 
-To get started with Scaffold-ETH 2, follow the steps below:
-
-1. Install dependencies if it was skipped in CLI:
+## 📁 Project Structure
 
 ```
-cd my-dapp-example
+
+packages/
+├── hardhat/            # Solidity contracts and deploy scripts
+└── nextjs/             # Frontend (Next.js + Wagmi + Viem)
+├── app/            # App Router pages (root DEX in `page.tsx`)
+├── components/     # UI components (SwapBox, Dashboard, etc.)
+├── hooks/          # Custom blockchain and UX hooks
+├── utils/          # Formatting, parsing, math helpers
+├── styles/         # Tailwind + DaisyUI themes (Uniswap-like)
+└── public/tokens/  # Token SVG icons (e.g. TKA.svg, TKB.svg)
+
+```
+
+---
+
+## ⚙️ Local Development
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/your-username/simpleswap-dex.git
+cd simpleswap-dex
+```
+
+### 2. Install dependencies
+
+```bash
 yarn install
 ```
 
-2. Run a local network in the first terminal:
+### 3. Configure environment variables
 
-```
-yarn chain
-```
+Create a `.env` file inside `packages/nextjs/`:
 
-This command starts a local Ethereum network using Hardhat. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `packages/hardhat/hardhat.config.ts`.
-
-3. On a second terminal, deploy the test contract:
-
-```
-yarn deploy
+```env
+NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_key
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_walletconnect_project_id
 ```
 
-This command deploys a test smart contract to the local network. The contract is located in `packages/hardhat/contracts` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/hardhat/deploy` to deploy the contract to the network. You can also customize the deploy script.
+> Get these from:
+>
+> - [Alchemy Dashboard](https://dashboard.alchemy.com)
+> - [WalletConnect Cloud](https://cloud.walletconnect.com)
 
-4. On a third terminal, start your NextJS app:
+### 4. Deploy contracts (to Sepolia)
 
+```bash
+cd packages/hardhat
+yarn deploy --network sepolia
 ```
-yarn start
+
+> After deploying, update contract addresses in your frontend config.
+
+---
+
+## ▶️ Run the Frontend
+
+```bash
+cd packages/nextjs
+yarn dev
 ```
 
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+Visit: [http://localhost:3000](http://localhost:3000)
 
-Run smart contract test with `yarn hardhat:test`
+---
 
-- Edit your smart contracts in `packages/hardhat/contracts`
-- Edit your frontend homepage at `packages/nextjs/app/page.tsx`. For guidance on [routing](https://nextjs.org/docs/app/building-your-application/routing/defining-routes) and configuring [pages/layouts](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts) checkout the Next.js documentation.
-- Edit your deployment scripts in `packages/hardhat/deploy`
+## 🧪 Useful Scripts
 
+```bash
+# Run Hardhat contract tests
+yarn test
 
-## Documentation
+# Lint frontend code
+yarn lint
 
-Visit our [docs](https://docs.scaffoldeth.io) to learn how to start building with Scaffold-ETH 2.
+# Build frontend for production
+yarn build
+```
 
-To know more about its features, check out our [website](https://scaffoldeth.io).
+---
 
-## Contributing to Scaffold-ETH 2
+## ✨ UI Overview
 
-We welcome contributions to Scaffold-ETH 2!
+Modern, Uniswap-inspired user interface:
 
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+- 🎛️ Responsive layout with tabbed navigation
+- 🪄 Smooth transitions (`animate-in`, `fade-in`, etc.)
+- 🧿 Token selector modal with custom icons
+- ⚙️ Approvals only when needed (with visual feedback)
+- 🎉 Toasts + confetti on success
+- 🌙 Light/Dark themes via DaisyUI
+
+---
+
+## 🚀 Deploy to Vercel
+
+SimpleSwap is Vercel-ready:
+
+1. Go to [Vercel](https://vercel.com)
+2. Import this repository
+3. Set the project root to `packages/nextjs`
+4. Add your `.env` variables in the Vercel dashboard
+5. Click **Deploy** 🚀
+
+---
+
+## 👨‍💻 Author
+
+Created with 💜 by **Francisco**
+
+- 💡 Based on [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2)
+- 🎨 Inspired by Uniswap’s clean and intuitive DEX UI
+
+---
+
+## 📄 License
+
+**MIT License** – free to use, remix and build upon.
+
+---

@@ -6,271 +6,235 @@ import toast from "react-hot-toast";
 import { Address, formatUnits, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useGlobalErrorToast } from "~~/hooks/simple-swap/useGlobalErrorToast";
 import { formatDecimalInput } from "~~/utils/simple-swap/parseInput";
+import { parseViemErrorToMessage } from "~~/utils/simple-swap/parseViemErrorToMessage";
 
-// Available tokens for swapping
 const AVAILABLE_TOKENS: TokenOption[] = [
   { symbol: "TKA", name: "TokenA", address: "0xc05C57BA153A2903977cdaa0E54e58d45ac349ED" },
   { symbol: "TKB", name: "TokenB", address: "0x84B42E3fE2312fBf9F1C7e7ad80BdF67bBE09Ac4" },
 ];
 
 interface Props {
-  spender: Address; // The contract address that needs token approval
+  spender: Address;
 }
 
-/**
- * Swap box component that handles token swapping with approval flow.
- * Features include:
- * - Token selection for both input and output
- * - Automatic price calculation based on reserves
- * - Token approval when needed
- * - Slippage protection
- * - Visual feedback with toasts and confetti
- *
- * @param {Address} spender - The contract address that needs token approval
- * @returns {React.FC} A complete swap interface component
- */
 export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
   const { address } = useAccount();
 
-  // Token selection state
   const [tokenIn, setTokenIn] = useState(AVAILABLE_TOKENS[0]);
   const [tokenOut, setTokenOut] = useState(AVAILABLE_TOKENS[1]);
   const [selecting, setSelecting] = useState<"in" | "out" | null>(null);
 
-  // Amount state
   const [amountIn, setAmountIn] = useState("");
   const [amountOut, setAmountOut] = useState("");
   const [lastEditedInput, setLastEditedInput] = useState<"in" | "out">("in");
 
-  // Approval and swap state
   const [allowanceOk, setAllowanceOk] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
 
-  // Constants
-  const slippage = 0.005; // 0.5% slippage tolerance
-  const isFormValid = Number(amountIn) > 0 && tokenIn.address !== tokenOut.address;
+  const slippage = 0.005;
+  const isSameToken = tokenIn.address === tokenOut.address;
+  const isFormValid = Number(amountIn) > 0 && !isSameToken;
 
-  // Contract interactions
-  const { writeContractAsync: approveAsync } = useScaffoldWriteContract({ contractName: tokenIn.name });
-  const { writeContractAsync: swapAsync } = useScaffoldWriteContract({ contractName: "SimpleSwap" });
+  const { writeContractAsync: approve } = useScaffoldWriteContract({ contractName: tokenIn.name });
+  const { writeContractAsync: swap } = useScaffoldWriteContract({ contractName: "SimpleSwap" });
 
-  // Read token allowance for the spender
-  const { data: allowance } = useScaffoldReadContract({
+  const { data: allowance, error: allowanceError } = useScaffoldReadContract({
     contractName: tokenIn.name,
     functionName: "allowance",
     args: [address!, spender],
     watch: true,
   });
 
-  // Read pool reserves for the token pair
-  const { data: reserves } = useScaffoldReadContract({
+  const { data: reserves, error: reservesError } = useScaffoldReadContract({
     contractName: "SimpleSwap",
     functionName: "getReserves",
     args: [tokenIn.address, tokenOut.address],
     watch: true,
   });
 
-  // Check if current allowance covers the input amount
+  useGlobalErrorToast(allowanceError);
+  useGlobalErrorToast(reservesError);
+
+  // Validar allowance
   useEffect(() => {
-    if (allowance && amountIn) {
-      setAllowanceOk(BigInt(allowance) >= parseEther(amountIn));
+    try {
+      if (!allowance || !amountIn || isNaN(Number(amountIn))) return setAllowanceOk(false);
+      const parsed = parseEther(amountIn);
+      setAllowanceOk(BigInt(allowance) >= parsed);
+    } catch {
+      setAllowanceOk(false);
     }
   }, [allowance, amountIn]);
 
-  // Calculate output amount based on reserves and slippage
+  // Recalcular el otro valor según el input editado
   useEffect(() => {
-    if (!reserves || (!amountIn && !amountOut)) return;
+    if (!reserves || !tokenIn || !tokenOut) return;
+    const [reserveIn, reserveOut] = reserves;
 
-    const reserveIn = reserves[0];
-    const reserveOut = reserves[1];
     if (reserveIn === 0n || reserveOut === 0n) return;
 
-    if (lastEditedInput === "in") {
-      // Calculate output amount with slippage when input changes
-      const input = parseEther(amountIn || "0");
-      const out = (input * reserveOut) / (reserveIn + input);
-      const outWithSlippage = out - (out * BigInt(Math.floor(slippage * 10000))) / 10000n;
-      setAmountOut(formatDecimalInput(formatUnits(outWithSlippage, 18), 2));
-    }
-
-    if (lastEditedInput === "out") {
-      // Calculate required input amount with slippage when output changes
-      const output = parseEther(amountOut || "0");
-      const input = (output * reserveIn) / (reserveOut - output);
-      const inputWithSlippage = input + (input * BigInt(Math.floor(slippage * 10000))) / 10000n;
-      setAmountIn(formatDecimalInput(formatUnits(inputWithSlippage, 18), 6));
-    }
-  }, [reserves, amountIn, amountOut, tokenIn, tokenOut, lastEditedInput]);
-
-  /**
-   * Handles the complete swap flow:
-   * 1. Validates the form
-   * 2. Approves token if needed
-   * 3. Executes the swap
-   * 4. Shows feedback to the user
-   */
-  const handleSwap = async () => {
-    if (!isFormValid || !address) {
-      toast.error("Formulario inválido.");
-      return;
-    }
-
-    const parsedAmount = parseEther(amountIn);
-    const parsedMinOut = parseEther(amountOut);
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 180); // 3 minute deadline
-
     try {
-      // Approval phase if needed
-      if (!allowanceOk) {
-        setIsApproving(true);
-        toast("Aprobando token...");
-        await approveAsync({
-          functionName: "approve",
-          args: [spender, parsedAmount],
-        });
-        toast.success("Token aprobado");
+      if (lastEditedInput === "in" && amountIn) {
+        const input = parseEther(amountIn);
+        const out = (input * reserveOut) / (reserveIn + input);
+        const outMin = out - (out * BigInt(Math.floor(slippage * 10000))) / 10000n;
+        setAmountOut(formatDecimalInput(formatUnits(outMin, 18), 3));
       }
 
-      // Swap execution phase
-      setIsApproving(false);
+      if (lastEditedInput === "out" && amountOut) {
+        const output = parseEther(amountOut);
+        if (output >= reserveOut) {
+          toast.error("No hay suficiente liquidez disponible");
+          return;
+        }
+        const input = (output * reserveIn) / (reserveOut - output);
+        const inputMax = input + (input * BigInt(Math.floor(slippage * 10000))) / 10000n;
+        setAmountIn(formatDecimalInput(formatUnits(inputMax, 18), 6));
+      }
+    } catch (err) {
+      console.error("Error en el cálculo de swap:", err);
+    }
+  }, [reserves, amountIn, amountOut, lastEditedInput, tokenIn, tokenOut]);
+
+  const handleSwap = async () => {
+    if (!isFormValid || !address) return;
+
+    try {
+      const parsedIn = parseEther(amountIn);
+      const parsedMinOut = parseEther(amountOut);
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 180);
+
+      if (!allowanceOk) {
+        setIsApproving(true);
+        const toastId = toast.loading("Aprobando token...");
+        await approve({ functionName: "approve", args: [spender, parsedIn] });
+        toast.dismiss(toastId);
+        toast.success("Token aprobado");
+        setAllowanceOk(true);
+      }
+
       setIsSwapping(true);
       const toastId = toast.loading("Realizando swap...");
 
-      await swapAsync({
+      await swap({
         functionName: "swapExactTokensForTokens",
-        args: [parsedAmount, parsedMinOut, [tokenIn.address, tokenOut.address], address, deadline],
+        args: [parsedIn, parsedMinOut, [tokenIn.address, tokenOut.address], address, deadline],
       });
 
-      // Success state
       toast.dismiss(toastId);
       toast.success("Swap exitoso");
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      confetti({ particleCount: 100, spread: 60, origin: { y: 0.6 } });
 
-      // Reset form
       setAmountIn("");
       setAmountOut("");
-    } catch (e: any) {
-      toast.error(`Error: ${e.message}`);
+    } catch (err) {
+      toast.error(parseViemErrorToMessage(err));
     } finally {
       setIsApproving(false);
       setIsSwapping(false);
     }
   };
 
-  /**
-   * Switches the input and output tokens
-   */
   const switchTokens = () => {
     setTokenIn(tokenOut);
     setTokenOut(tokenIn);
     setLastEditedInput("in");
+    setAmountOut("");
   };
 
   return (
-    <div className="card rounded-2xl shadow-xl bg-base-200 p-6 space-y-4 max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="space-y-2">
-        {/* INPUT TOKEN SECTION */}
-        <div className="bg-base-300 p-4 rounded-xl">
-          <label className="text-sm text-gray-400">Vender</label>
-          <div className="flex items-center gap-2 mt-1">
-            <input
-              className="input input-bordered bg-base-100 text-lg w-full"
-              placeholder="0.0"
-              value={amountIn}
-              onChange={e => {
-                setAmountIn(formatDecimalInput(e.target.value));
-                setLastEditedInput("in");
-              }}
-              type="number"
-              min="0"
-            />
-            <button className="btn btn-outline w-32 flex items-center gap-2" onClick={() => setSelecting("in")}>
-              <Image
-                src={`/tokens/${tokenIn.symbol}.svg`}
-                className="w-5 h-5"
-                alt={tokenIn.symbol}
-                width={40}
-                height={40}
-              />
-              {tokenIn.symbol}
-            </button>
-          </div>
-        </div>
-
-        {/* TOKEN SWITCH BUTTON */}
-        <div className="flex justify-center">
-          <button className="btn btn-circle btn-sm" onClick={switchTokens}>
-            <Image src="/tokens/arrow.svg" alt="arrow" width={12.5} height={20} />
+    <div className="card rounded-2xl shadow-xl bg-base-200 p-6 space-y-4 max-w-md w-full mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+      {/* Input token */}
+      <div className="bg-base-300 p-4 rounded-xl">
+        <label className="text-sm text-gray-400">Vender</label>
+        <div className="flex items-center gap-2 mt-1">
+          <input
+            className="input input-bordered bg-base-100 text-lg w-full"
+            placeholder="0.0"
+            type="number"
+            step="any"
+            value={amountIn}
+            onChange={e => {
+              setAmountIn(formatDecimalInput(e.target.value, 6));
+              setLastEditedInput("in");
+            }}
+            disabled={isApproving || isSwapping}
+          />
+          <button className="btn btn-outline w-32 flex items-center gap-2" onClick={() => setSelecting("in")}>
+            <Image src={`/tokens/${tokenIn.symbol}.svg`} alt={tokenIn.symbol} width={24} height={24} />
+            {tokenIn.symbol}
           </button>
         </div>
-
-        {/* OUTPUT TOKEN SECTION */}
-        <div className="bg-base-300 p-4 rounded-xl">
-          <label className="text-sm text-gray-400">Comprar</label>
-          <div className="flex items-center gap-2 mt-1">
-            <input
-              className="input input-bordered bg-base-100 text-lg w-full"
-              placeholder="0.0"
-              value={amountOut}
-              onChange={e => {
-                setAmountOut(formatDecimalInput(e.target.value));
-                setLastEditedInput("out");
-              }}
-              type="number"
-              min="0"
-            />
-            <button className="btn btn-outline w-32 flex items-center gap-2" onClick={() => setSelecting("out")}>
-              <Image
-                src={`/tokens/${tokenOut.symbol}.svg`}
-                className="w-5 h-5"
-                alt={tokenOut.symbol}
-                width={40}
-                height={40}
-              />
-              {tokenOut.symbol}
-            </button>
-          </div>
-        </div>
-
-        {/* PRICE INDICATOR */}
-        <p className="text-xs text-center text-gray-400 mt-2">
-          1 {tokenIn.symbol} ≈{" "}
-          {reserves && reserves[0] !== 0n && reserves[1] !== 0n
-            ? formatDecimalInput((Number(reserves[1]) / Number(reserves[0])).toFixed(6))
-            : "-"}{" "}
-          {tokenOut.symbol}
-        </p>
-
-        {/* ERROR MESSAGE FOR SAME TOKEN SELECTION */}
-        {tokenIn.address === tokenOut.address && (
-          <p className="text-error text-sm mt-2">❌ No puedes seleccionar el mismo token para ambos lados.</p>
-        )}
-
-        {/* SWAP BUTTON */}
-        <button
-          className="btn btn-primary w-full py-3 text-lg"
-          disabled={!isFormValid || isApproving || isSwapping}
-          onClick={handleSwap}
-        >
-          {isApproving || isSwapping ? <span className="loading loading-spinner loading-sm" /> : "Intercambiar"}
-        </button>
-
-        {/* TOKEN SELECTION MODAL */}
-        <TokenSelectorModal
-          isOpen={selecting !== null}
-          onClose={() => setSelecting(null)}
-          onSelect={token => {
-            if (selecting === "in") {
-              setTokenIn(token);
-            } else {
-              setTokenOut(token);
-            }
-          }}
-          tokenList={AVAILABLE_TOKENS}
-        />
       </div>
+
+      {/* Switch button */}
+      <div className="flex justify-center">
+        <button className="btn btn-circle btn-sm" onClick={switchTokens} disabled={isApproving || isSwapping}>
+          <Image src="/arrow.svg" alt="switch" width={12.5} height={20} />
+        </button>
+      </div>
+
+      {/* Output token */}
+      <div className="bg-base-300 p-4 rounded-xl">
+        <label className="text-sm text-gray-400">Comprar</label>
+        <div className="flex items-center gap-2 mt-1">
+          <input
+            className="input input-bordered bg-base-100 text-lg w-full"
+            placeholder="0.0"
+            type="number"
+            step="any"
+            value={amountOut}
+            onChange={e => {
+              setAmountOut(formatDecimalInput(e.target.value, 6));
+              setLastEditedInput("out");
+            }}
+            disabled={isApproving || isSwapping}
+          />
+          <button className="btn btn-outline w-32 flex items-center gap-2" onClick={() => setSelecting("out")}>
+            <Image src={`/tokens/${tokenOut.symbol}.svg`} alt={tokenOut.symbol} width={24} height={24} />
+            {tokenOut.symbol}
+          </button>
+        </div>
+      </div>
+
+      {/* Rate */}
+      <p className="text-xs text-center text-gray-400 mt-2">
+        1 {tokenIn.symbol} ≈{" "}
+        {reserves && reserves[0] !== 0n && reserves[1] !== 0n
+          ? formatDecimalInput((Number(reserves[1]) / Number(reserves[0])).toFixed(6))
+          : "-"}{" "}
+        {tokenOut.symbol}
+      </p>
+
+      {/* Error */}
+      {isSameToken && (
+        <p className="text-error text-sm mt-2">❌ No puedes seleccionar el mismo token para ambos lados.</p>
+      )}
+
+      {/* Swap button */}
+      <button
+        className="btn btn-primary w-full py-3 text-lg"
+        disabled={!isFormValid || isApproving || isSwapping}
+        onClick={handleSwap}
+      >
+        {isApproving ? "Aprobando..." : isSwapping ? "Intercambiando..." : "Intercambiar"}
+        {(isApproving || isSwapping) && <span className="loading loading-spinner loading-sm ml-2" />}
+      </button>
+
+      {/* Modal */}
+      <TokenSelectorModal
+        isOpen={selecting !== null}
+        onClose={() => setSelecting(null)}
+        onSelect={token => {
+          if (selecting === "in") setTokenIn(token);
+          if (selecting === "out") setTokenOut(token);
+          setSelecting(null);
+        }}
+        tokenList={AVAILABLE_TOKENS}
+      />
     </div>
   );
 };

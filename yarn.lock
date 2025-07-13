@@ -3459,9 +3459,10 @@ __metadata:
     qrcode.react: ~4.0.1
     react: ~19.0.0
     react-dom: ~19.0.0
+    react-error-boundary: ^6.0.0
     react-hot-toast: ^2.5.2
     tailwindcss: 4.1.3
-    tailwindcss-animate: ^1.0.7
+    tw-animate-css: ^1.3.5
     type-fest: ~4.26.1
     typescript: ~5.8.2
     usehooks-ts: ~3.1.0
@@ -14223,6 +14224,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-error-boundary@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "react-error-boundary@npm:6.0.0"
+  dependencies:
+    "@babel/runtime": ^7.12.5
+  peerDependencies:
+    react: ">=16.13.1"
+  checksum: d6807004d2b5c0a971b433b8698d3c95ebb43d407b304d87d59d57ba2a08d10113e481031ca778a1b8529bbddb421c96e508dbd9a5b5d6f084f1d1f653b05941
+  languageName: node
+  linkType: hard
+
 "react-hot-toast@npm:^2.5.2":
   version: 2.5.2
   resolution: "react-hot-toast@npm:2.5.2"
@@ -15822,15 +15834,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tailwindcss-animate@npm:^1.0.7":
-  version: 1.0.7
-  resolution: "tailwindcss-animate@npm:1.0.7"
-  peerDependencies:
-    tailwindcss: "*"
-  checksum: c1760983eb3fec0c8421e95082bf308e6845df43e2f90862386366e82545c801b26b4d189c4cd23d6915252b76d18005c8e5f591f8b119944c7fb8650d0f8bce
-  languageName: node
-  linkType: hard
-
 "tailwindcss@npm:4.0.15":
   version: 4.0.15
   resolution: "tailwindcss@npm:4.0.15"
@@ -16211,6 +16214,13 @@ __metadata:
     debug: ^4.4.1
     make-fetch-happen: ^14.0.3
   checksum: 1a45a055e97041459aacca576e439baf0517d88db3eb600479b57fb60c2403dc193048135f1a2612378dc0b00c8437ec990b132d404b0a5e7471bf2e2824d2aa
+  languageName: node
+  linkType: hard
+
+"tw-animate-css@npm:^1.3.5":
+  version: 1.3.5
+  resolution: "tw-animate-css@npm:1.3.5"
+  checksum: 7587be30c5db6d0333795d9bc34bfd1eb180d53b7e8cd966e2590d7bc7bafec1b46cecd1b76c54d0deb7f8b198d9898af2d12392f4804ec569d285cad504a06b
   languageName: node
   linkType: hard
 

@@ -1,113 +1,192 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import confetti from "canvas-confetti";
 import toast from "react-hot-toast";
-import { Address, parseEther } from "viem";
+import { formatUnits, parseEther } from "viem";
 import { useAccount } from "wagmi";
-import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useGlobalErrorToast } from "~~/hooks/simple-swap/useGlobalErrorToast";
 import { formatDecimalInput } from "~~/utils/simple-swap/parseInput";
+import { parseViemErrorToMessage } from "~~/utils/simple-swap/parseViemErrorToMessage";
 
 interface Props {
-  tokenA: Address;
-  tokenB: Address;
-  lpTokenContract: "SimpleSwap";
-  spender: Address;
+  tokenA: string;
+  tokenB: string;
+  lpTokenContract: string;
+  spender: string;
 }
 
-/**
- * A form component for removing liquidity from a pool with LP token approval.
- * Handles the approval and liquidity removal process with user feedback.
- *
- * @param {Address} tokenA - The address of the first token in the pair
- * @param {Address} tokenB - The address of the second token in the pair
- * @param {"SimpleSwap"} lpTokenContract - The name of the LP token contract
- * @param {Address} spender - The contract address to approve for LP token spending
- * @returns {React.FC} A form component for removing liquidity
- */
-export const RemoveLiquidityWithApprovalForm: React.FC<Props> = ({ tokenA, tokenB, lpTokenContract, spender }) => {
+export const RemoveLiquidityWithApprovalForm = ({ tokenA, tokenB, lpTokenContract, spender }: Props) => {
   const { address } = useAccount();
 
-  // State for LP token amount and loading states
-  const [lpAmount, setLpAmount] = useState("");
+  const [liquidity, setLiquidity] = useState("");
   const [isApproving, setIsApproving] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [allowanceOk, setAllowanceOk] = useState(false);
+  const [maxLPToWithdraw, setMaxLPToWithdraw] = useState("0.0");
 
-  // Contract write hooks for approvals and removing liquidity
+  const isFormValid = Number(liquidity) > 0;
+  const PROTOCOL_LOCKED_LP = 1_000_000_000_000n;
+
   const { writeContractAsync: approveLP } = useScaffoldWriteContract({ contractName: lpTokenContract });
   const { writeContractAsync: removeLiquidity } = useScaffoldWriteContract({ contractName: "SimpleSwap" });
 
-  /**
-   * Handles the complete liquidity removal flow:
-   * 1. Validates input
-   * 2. Approves LP token spending
-   * 3. Removes liquidity from the pool
-   * 4. Provides user feedback via toasts and confetti
-   */
-  const handleRemoveLiquidity = async () => {
-    // Validate input
-    if (!lpAmount || !address) {
-      toast.error("Ingresa la cantidad de LP tokens a retirar");
+  // 📊 LP token allowance
+  const { data: allowance, error: allowanceError } = useScaffoldReadContract({
+    contractName: lpTokenContract,
+    functionName: "allowance",
+    args: [address!, spender],
+    watch: true,
+  });
+
+  // 📈 Total LP supply
+  const { data: totalSupply, error: totalSupplyError } = useScaffoldReadContract({
+    contractName: lpTokenContract,
+    functionName: "totalSupply",
+    watch: true,
+  });
+
+  // 💧 Pool reserves (contables)
+  const { data: reserves, error: reservesError } = useScaffoldReadContract({
+    contractName: "SimpleSwap",
+    functionName: "getReserves",
+    args: [tokenA, tokenB],
+    watch: true,
+  });
+
+  // 📦 Balances REALES del contrato SimpleSwap
+  const { data: balanceA, error: errorBalanceA } = useScaffoldReadContract({
+    contractName: "TokenA",
+    functionName: "balanceOf",
+    args: [spender],
+    watch: true,
+  });
+
+  const { data: balanceB, error: errorBalanceB } = useScaffoldReadContract({
+    contractName: "TokenB",
+    functionName: "balanceOf",
+    args: [spender],
+    watch: true,
+  });
+
+  // 📣 Errores reactivos
+  useGlobalErrorToast(allowanceError);
+  useGlobalErrorToast(totalSupplyError);
+  useGlobalErrorToast(reservesError);
+  useGlobalErrorToast(errorBalanceA);
+  useGlobalErrorToast(errorBalanceB);
+
+  // 🧠 Máximo real removible
+  useEffect(() => {
+    if (!reserves || !balanceA || !balanceB || !totalSupply) return;
+
+    const [reserveA, reserveB] = reserves;
+    const circulating = totalSupply - PROTOCOL_LOCKED_LP;
+
+    if (reserveA === 0n || reserveB === 0n || circulating === 0n) {
+      setMaxLPToWithdraw("0.0");
       return;
     }
 
+    const maxA = (balanceA * circulating) / reserveA;
+    const maxB = (balanceB * circulating) / reserveB;
+    const min = maxA < maxB ? maxA : maxB;
+
+    setMaxLPToWithdraw(formatUnits(min, 18));
+  }, [reserves, balanceA, balanceB, totalSupply, PROTOCOL_LOCKED_LP]);
+
+  // ✅ Validar allowance
+  useEffect(() => {
     try {
-      // Parse amount and set deadline (20 minutes from now)
-      const parsedLP = parseEther(lpAmount);
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 180);
+      if (!allowance || !liquidity || isNaN(Number(liquidity))) return setAllowanceOk(false);
+      const parsed = parseEther(liquidity);
+      setAllowanceOk(BigInt(allowance) >= parsed);
+    } catch {
+      setAllowanceOk(false);
+    }
+  }, [allowance, liquidity]);
 
-      // Approval phase
+  const approveIfNeeded = async (parsed: bigint) => {
+    if (!allowanceOk) {
       setIsApproving(true);
-      toast("Aprobando tokens LP...");
-      await approveLP({ functionName: "approve", args: [spender, parsedLP] });
-      toast.success("Token LP aprobado");
+      const toastId = toast.loading("Aprobando tokens LP...");
+      await approveLP({ functionName: "approve", args: [spender, parsed] });
+      toast.dismiss(toastId);
+      toast.success("Tokens LP aprobados");
+      setAllowanceOk(true);
       setIsApproving(false);
+    }
+  };
 
-      // Liquidity removal phase
+  const handleRemoveLiquidity = async () => {
+    if (!isFormValid || !address || isApproving || isRemoving) return;
+
+    const parsed = parseEther(liquidity);
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 180);
+
+    try {
+      await approveIfNeeded(parsed);
+
       setIsRemoving(true);
-      const toastId = toast.loading("Retirando liquidez...");
+      const toastId = toast.loading("Removiendo liquidez...");
 
       await removeLiquidity({
         functionName: "removeLiquidity",
-        args: [tokenA, tokenB, parsedLP, 0n, 0n, address, deadline],
+        args: [tokenA, tokenB, parsed, 0n, 0n, address, deadline],
       });
 
-      // Success state
       toast.dismiss(toastId);
-      toast.success("Liquidez retirada");
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-
-      // Reset form
-      setLpAmount("");
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
+      toast.success("Liquidez removida");
+      confetti({ particleCount: 100, spread: 60, origin: { y: 0.6 } });
+      setLiquidity("");
+    } catch (err) {
+      toast.error(parseViemErrorToMessage(err));
     } finally {
-      // Reset loading states
       setIsApproving(false);
       setIsRemoving(false);
     }
   };
 
+  const formattedMax = parseFloat(maxLPToWithdraw).toFixed(6);
+
   return (
-    <div className="card bg-base-200 p-6 rounded-2xl shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-md mx-auto">
+    <div className="card bg-base-200 p-6 rounded-2xl shadow-lg max-w-md w-full mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="space-y-4">
-        {/* LP Token Input */}
-        <div className="bg-base-300 p-4 rounded-xl">
-          <label className="text-sm text-gray-400">Cantidad de tokens LP (SS-LP)</label>
+        <h2 className="text-xl font-semibold">Remover Liquidez</h2>
+
+        <div className="form-control">
+          <label className="label">Cantidad de LP tokens (SS-LP)</label>
           <input
-            className="input input-bordered bg-base-100 w-full mt-1"
+            className="input input-bordered w-full"
             type="number"
+            step="any"
+            min="0"
             placeholder="0.0"
-            value={lpAmount}
-            onChange={e => setLpAmount(formatDecimalInput(e.target.value))}
+            value={liquidity}
+            onChange={e => {
+              try {
+                const val = e.target.value;
+                if (!val || parseFloat(val) <= parseFloat(maxLPToWithdraw)) {
+                  setLiquidity(formatDecimalInput(val, 6));
+                } else {
+                  toast.error("Supera el máximo disponible.");
+                }
+              } catch {
+                setLiquidity("");
+              }
+            }}
+            disabled={isApproving || isRemoving}
           />
+
+          {allowanceOk && <p className="text-xs text-green-500 mt-1">✔ Token LP aprobado</p>}
+          <p className="text-xs text-gray-500 mt-1">Máximo disponible: {formattedMax} SS-LP</p>
         </div>
 
-        {/* Submit Button */}
         <button
-          className="btn btn-primary w-full mt-2 py-3 text-lg"
+          className="btn btn-primary w-full"
           onClick={handleRemoveLiquidity}
-          disabled={!lpAmount || isApproving || isRemoving}
+          disabled={!isFormValid || isApproving || isRemoving}
         >
-          {isApproving || isRemoving ? <span className="loading loading-spinner" /> : "Retirar liquidez"}
+          {isApproving || isRemoving ? <span className="loading loading-spinner loading-sm" /> : "Remover Liquidez"}
         </button>
       </div>
     </div>

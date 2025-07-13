@@ -1,6 +1,5 @@
 @import "tailwindcss";
-@import "tailwindcss/preflight";
-@tailwind utilities;
+@import "tw-animate-css";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
@@ -18,61 +17,73 @@
 @plugin "daisyui/theme" {
   name: "light";
 
-  /* Modern Light DEX Theme */
-  --color-primary: #6e56f8; /* Púrpura vibrante principal */
+  /* 🌞 Modern Light DEX Theme */
+  --color-primary: #6e56f8; /* Púrpura vibrante */
   --color-primary-content: #ffffff;
-  --color-secondary: #edeafd; /* Púrpura claro para fondos */
-  --color-secondary-content: #6e56f8;
-  --color-accent: #00c4b8; /* Cyan para acciones secundarias */
-  --color-accent-content: #ffffff;
-  --color-neutral: #1a1d1e; /* Negro suavizado */
-  --color-neutral-content: #ffffff;
-  --color-base-100: #ffffff; /* Fondo blanco puro */
-  --color-base-200: #f9f9fb; /* Gris ultra claro */
-  --color-base-300: #f0f0f3; /* Gris claro para separadores */
-  --color-base-content: #1a1d1e;
-  --color-info: #6e56f8;
-  --color-success: #22c55e; /* Verde esmeralda vibrante */
-  --color-warning: #f59e0b; /* Ámbar para advertencias */
-  --color-error: #ef4444; /* Rojo coral para errores */
+  --color-primary-hover: #5944f4;
+  --color-primary-active: #4633d4;
 
-  /* Bordes modernos */
+  --color-secondary: #edeafd; /* Púrpura muy claro */
+  --color-secondary-content: #4338ca; /* Contraste mejorado */
+
+  --color-accent: #00c4b8; /* Cyan elegante */
+  --color-accent-content: #ffffff;
+
+  --color-neutral: #1a1d1e;
+  --color-neutral-content: #ffffff;
+
+  --color-base-100: #ffffff;
+  --color-base-200: #f9f9fb;
+  --color-base-300: #e5e7eb; /* Gris más neutro */
+  --color-base-content: #1a1d1e;
+
+  --color-info: #6e56f8;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  /* 📐 Bordes y sombras */
   --radius-field: 12px;
   --radius-box: 16px;
   --tt-tailw: 6px;
 
-  /* Sombras sutiles */
   --shadow-btn: 0 2px 4px rgba(110, 86, 248, 0.15);
 }
 
 @plugin "daisyui/theme" {
   name: "dark";
 
-  /* Elegant Dark DEX Theme */
-  --color-primary: #8b7af9; /* Púrpura más brillante en oscuro */
+  /* 🌚 Elegant Dark DEX Theme */
+  --color-primary: #8b7af9; /* Púrpura claro y visible */
   --color-primary-content: #ffffff;
-  --color-secondary: #2a2845; /* Púrpura oscuro para fondos */
-  --color-secondary-content: #b5a9fd;
-  --color-accent: #00e0d2; /* Cyan neón para detalles */
-  --color-accent-content: #0f1e1d;
-  --color-neutral: #e2e2e4; /* Gris claro para textos */
-  --color-neutral-content: #1a1d1e;
-  --color-base-100: #121316; /* Fondo negro azulado */
-  --color-base-200: #1c1d22; /* Gris oscuro para cards */
-  --color-base-300: #26272d; /* Gris medio para elementos */
-  --color-base-content: #e2e2e4;
-  --color-info: #8b7af9;
-  --color-success: #10b981; /* Verde más suave */
-  --color-warning: #fbbf24; /* Ámbar más cálido */
-  --color-error: #f87171; /* Rojo suavizado */
+  --color-primary-hover: #7462e4;
+  --color-primary-active: #5f4ed4;
 
-  /* Bordes consistentes */
+  --color-secondary: #2a2845; /* Fondo púrpura oscuro */
+  --color-secondary-content: #b5a9fd;
+
+  --color-accent: #00bfb1; /* Cyan menos saturado */
+  --color-accent-content: #0f1e1d;
+
+  --color-neutral: #e2e2e4;
+  --color-neutral-content: #1a1d1e;
+
+  --color-base-100: #121316;
+  --color-base-200: #1c1d22;
+  --color-base-300: #26272d;
+  --color-base-content: #e2e2e4;
+
+  --color-info: #8b7af9;
+  --color-success: #10b981;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+
+  /* 📐 Bordes y sombras */
   --radius-field: 12px;
   --radius-box: 16px;
   --tt-tailw: 6px;
   --tt-bg: var(--color-base-200);
 
-  /* Efectos de profundidad */
   --shadow-btn: 0 2px 8px rgba(139, 122, 249, 0.25);
 }
 
