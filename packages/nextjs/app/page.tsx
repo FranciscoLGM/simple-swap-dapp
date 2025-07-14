@@ -7,9 +7,9 @@ import { SwapDashboard } from "~~/components/SwapDashboard";
 import { SwapWithApprovalBox } from "~~/components/SwapWithApprovalBox";
 
 // 🧾 Direcciones desplegadas en Sepolia
-const TOKEN_A = "0xc05C57BA153A2903977cdaa0E54e58d45ac349ED";
-const TOKEN_B = "0x84B42E3fE2312fBf9F1C7e7ad80BdF67bBE09Ac4";
-const SIMPLE_SWAP = "0xA4D99A8dD063A2135b915777EBD9FcF1671C357e";
+const TOKEN_A = "0x08A82179B7074f6C2B53696E0e074B2959d9A99d";
+const TOKEN_B = "0x79c6c419f670A12eACF0b3A7645C8A29C34Bde04";
+const SIMPLE_SWAP = "0xeC4A93b510Ba20c1B41f9DfD90F0e1918a205eaF";
 
 const DexPage: NextPage = () => {
   const [activeTab, setActiveTab] = useState<"swap" | "liquidity" | "dashboard">("swap");

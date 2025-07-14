@@ -11,8 +11,8 @@ import { formatDecimalInput } from "~~/utils/simple-swap/parseInput";
 import { parseViemErrorToMessage } from "~~/utils/simple-swap/parseViemErrorToMessage";
 
 const AVAILABLE_TOKENS: TokenOption[] = [
-  { symbol: "TKA", name: "TokenA", address: "0xc05C57BA153A2903977cdaa0E54e58d45ac349ED" },
-  { symbol: "TKB", name: "TokenB", address: "0x84B42E3fE2312fBf9F1C7e7ad80BdF67bBE09Ac4" },
+  { symbol: "TKA", name: "TokenA", address: "0x08A82179B7074f6C2B53696E0e074B2959d9A99d" },
+  { symbol: "TKB", name: "TokenB", address: "0x79c6c419f670A12eACF0b3A7645C8A29C34Bde04" },
 ];
 
 // ⚠️ Fix tipos para contractName

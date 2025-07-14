@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   11155111: {
     SimpleSwap: {
-      address: "0xA4D99A8dD063A2135b915777EBD9FcF1671C357e",
+      address: "0xeC4A93b510Ba20c1B41f9DfD90F0e1918a205eaF",
       abi: [
         {
           inputs: [],
@@ -1048,7 +1048,7 @@ const deployedContracts = {
       },
     },
     TokenA: {
-      address: "0xc05C57BA153A2903977cdaa0E54e58d45ac349ED",
+      address: "0x08A82179B7074f6C2B53696E0e074B2959d9A99d",
       abi: [
         {
           inputs: [
@@ -1473,7 +1473,7 @@ const deployedContracts = {
       },
     },
     TokenB: {
-      address: "0x84B42E3fE2312fBf9F1C7e7ad80BdF67bBE09Ac4",
+      address: "0x79c6c419f670A12eACF0b3A7645C8A29C34Bde04",
       abi: [
         {
           inputs: [
