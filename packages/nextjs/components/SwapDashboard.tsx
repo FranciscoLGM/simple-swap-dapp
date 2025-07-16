@@ -1,8 +1,6 @@
 import { FC, useState } from "react";
-import { formatUnits } from "viem";
-import { Address } from "viem";
+import { Address, formatUnits } from "viem";
 import { useAccount } from "wagmi";
-import { TokenListCard } from "~~/components/TokenListCard";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { useGlobalErrorToast } from "~~/hooks/simple-swap/useGlobalErrorToast";
 import { formatDecimalInput } from "~~/utils/simple-swap/parseInput";
@@ -39,6 +37,20 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
     watch: true,
   });
 
+  const { data: balanceA } = useScaffoldReadContract({
+    contractName: "TokenA",
+    functionName: "balanceOf",
+    args: [address!],
+    watch: true,
+  });
+
+  const { data: balanceB } = useScaffoldReadContract({
+    contractName: "TokenB",
+    functionName: "balanceOf",
+    args: [address!],
+    watch: true,
+  });
+
   const PROTOCOL_LOCKED_LP = 1_000_000_000_000n;
   const circulatingSupply = totalSupply ? totalSupply - PROTOCOL_LOCKED_LP : 0n;
 
@@ -59,6 +71,26 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
 
   const formatValue = (value: bigint | undefined, precision = 2) =>
     value ? formatDecimalInput(formatUnits(value, 18), precision) : "0.00";
+
+  const tkaToTkbPrice =
+    reserves && reserves[0] > 0n && reserves[1] > 0n
+      ? formatDecimalInput((Number(reserves[1]) / Number(reserves[0])).toFixed(6))
+      : "-";
+
+  const tkbToTkaPrice =
+    reserves && reserves[0] > 0n && reserves[1] > 0n
+      ? formatDecimalInput((Number(reserves[0]) / Number(reserves[1])).toFixed(6))
+      : "-";
+
+  const balanceAinTKB =
+    reserves && reserves[0] > 0n && reserves[1] > 0n && balanceA
+      ? formatDecimalInput(((Number(balanceA) * Number(reserves[1])) / Number(reserves[0]) / 1e18).toFixed(4))
+      : "-";
+
+  const balanceBinTKA =
+    reserves && reserves[0] > 0n && reserves[1] > 0n && balanceB
+      ? formatDecimalInput(((Number(balanceB) * Number(reserves[0])) / Number(reserves[1]) / 1e18).toFixed(4))
+      : "-";
 
   const tabStyle = "tab transition-all duration-200";
 
@@ -90,6 +122,11 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
       <div className="space-y-4 transition-opacity duration-300 animate-in fade-in slide-in-from-bottom-4">
         {activeTab === "pool" && (
           <div className="card bg-base-200 p-6 rounded-2xl shadow-xl space-y-3">
+            <div className="bg-base-300 p-4 rounded-xl">
+              <p className="text-sm text-gray-400 mb-1">Precios del pool</p>
+              <p className="text-sm text-base-content font-semibold">1 TKA ≈ {tkaToTkbPrice} TKB</p>
+              <p className="text-sm text-base-content font-semibold">1 TKB ≈ {tkbToTkaPrice} TKA</p>
+            </div>
             <div className="bg-base-300 p-4 rounded-xl">
               <p className="text-sm text-gray-400">Reserva de TokenA (TKA)</p>
               <p className="text-lg font-bold">{formatValue(reserves?.[0])}</p>
@@ -126,23 +163,22 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
         )}
 
         {activeTab === "balances" && (
-          <TokenListCard
-            title="Tus Tokens"
-            tokens={[
-              {
-                symbol: "TKA",
-                name: "TokenA",
-                address: tokenA,
-                contractName: "TokenA",
-              },
-              {
-                symbol: "TKB",
-                name: "TokenB",
-                address: tokenB,
-                contractName: "TokenB",
-              },
-            ]}
-          />
+          <div className="card bg-base-200 p-6 rounded-2xl shadow-xl space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-400">TokenA (TKA)</p>
+                <p className="text-lg font-bold">{formatValue(balanceA)}</p>
+              </div>
+              <div className="text-right text-sm text-gray-500">≈ {balanceAinTKB} TKB</div>
+            </div>
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-400">TokenB (TKB)</p>
+                <p className="text-lg font-bold">{formatValue(balanceB)}</p>
+              </div>
+              <div className="text-right text-sm text-gray-500">≈ {balanceBinTKA} TKA</div>
+            </div>
+          </div>
         )}
       </div>
     </div>
