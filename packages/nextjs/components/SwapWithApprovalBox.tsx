@@ -1,8 +1,15 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { TokenOption, TokenSelectorModal } from "./TokenSelectorModal";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import confetti from "canvas-confetti";
+import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import { FiAlertCircle } from "react-icons/fi";
+import { MdSwapVert } from "react-icons/md";
+import { Tooltip } from "react-tooltip";
 import { Address, formatUnits, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
@@ -15,7 +22,6 @@ const AVAILABLE_TOKENS: TokenOption[] = [
   { symbol: "TKB", name: "TokenB", address: "0x79c6c419f670A12eACF0b3A7645C8A29C34Bde04" },
 ];
 
-// ⚠️ Fix tipos para contractName
 type TokenContractName = "TokenA" | "TokenB";
 const symbolToContractName: Record<string, TokenContractName> = {
   TKA: "TokenA",
@@ -47,10 +53,7 @@ export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
 
   const tokenInContractName = symbolToContractName[tokenIn.symbol];
 
-  const { writeContractAsync: approve } = useScaffoldWriteContract({
-    contractName: tokenInContractName,
-  });
-
+  const { writeContractAsync: approve } = useScaffoldWriteContract({ contractName: tokenInContractName });
   const { writeContractAsync: swap } = useScaffoldWriteContract({ contractName: "SimpleSwap" });
 
   const { data: allowance, error: allowanceError } = useScaffoldReadContract({
@@ -70,7 +73,6 @@ export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
   useGlobalErrorToast(allowanceError);
   useGlobalErrorToast(reservesError);
 
-  // Validar allowance
   useEffect(() => {
     try {
       if (!allowance || !amountIn || isNaN(Number(amountIn))) return setAllowanceOk(false);
@@ -81,11 +83,9 @@ export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
     }
   }, [allowance, amountIn]);
 
-  // Recalcular el otro valor según el input editado
   useEffect(() => {
     if (!reserves || !tokenIn || !tokenOut) return;
     const [reserveIn, reserveOut] = reserves;
-
     if (reserveIn === 0n || reserveOut === 0n) return;
 
     try {
@@ -158,8 +158,14 @@ export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
   };
 
   return (
-    <div className="card rounded-2xl shadow-xl bg-base-200 p-6 space-y-4 max-w-md w-full mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-      {/* Input token */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.3 }}
+      className="card rounded-2xl shadow-xl bg-base-200 p-6 space-y-4 max-w-md w-full mx-auto"
+    >
+      {/* Token In */}
       <div className="bg-base-300 p-4 rounded-xl">
         <label className="text-sm text-gray-400">Vender</label>
         <div className="flex items-center gap-2 mt-1">
@@ -175,21 +181,32 @@ export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
             }}
             disabled={isApproving || isSwapping}
           />
-          <button className="btn btn-outline w-32 flex items-center gap-2" onClick={() => setSelecting("in")}>
+          <button
+            className="w-32 px-3 py-2 bg-base-100 hover:bg-base-200 border border-base-300 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
+            onClick={() => setSelecting("in")}
+            type="button"
+          >
             <Image src={`/tokens/${tokenIn.symbol}.svg`} alt={tokenIn.symbol} width={24} height={24} />
-            {tokenIn.symbol}
+            <span className="font-medium">{tokenIn.symbol}</span>
           </button>
         </div>
       </div>
 
-      {/* Switch button */}
+      {/* Switch */}
       <div className="flex justify-center">
-        <button className="btn btn-circle btn-sm" onClick={switchTokens} disabled={isApproving || isSwapping}>
-          <Image src="/arrow.svg" alt="switch" width={12.5} height={20} />
+        <button
+          className="btn btn-circle btn-sm hover:scale-110 transition-transform"
+          onClick={switchTokens}
+          disabled={isApproving || isSwapping}
+          data-tooltip-id="switch-tooltip"
+          data-tooltip-content="Intercambiar tokens"
+        >
+          <MdSwapVert size={20} />
         </button>
+        <Tooltip id="switch-tooltip" />
       </div>
 
-      {/* Output token */}
+      {/* Token Out */}
       <div className="bg-base-300 p-4 rounded-xl">
         <label className="text-sm text-gray-400">Comprar</label>
         <div className="flex items-center gap-2 mt-1">
@@ -205,36 +222,64 @@ export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
             }}
             disabled={isApproving || isSwapping}
           />
-          <button className="btn btn-outline w-32 flex items-center gap-2" onClick={() => setSelecting("out")}>
+          <button
+            className="w-32 px-3 py-2 bg-base-100 hover:bg-base-200 border border-base-300 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
+            onClick={() => setSelecting("out")}
+            type="button"
+          >
             <Image src={`/tokens/${tokenOut.symbol}.svg`} alt={tokenOut.symbol} width={24} height={24} />
-            {tokenOut.symbol}
+            <span className="font-medium">{tokenOut.symbol}</span>
           </button>
         </div>
       </div>
 
       {/* Rate */}
-      <p className="text-xs text-center text-gray-400 mt-2">
+      <p
+        className="text-xs text-center text-gray-400 mt-2"
+        data-tooltip-id="rate-tooltip"
+        data-tooltip-content="Tasa estimada con slippage del 0.5%"
+      >
         1 {tokenIn.symbol} ≈{" "}
         {reserves && reserves[0] !== 0n && reserves[1] !== 0n
           ? formatDecimalInput((Number(reserves[1]) / Number(reserves[0])).toFixed(6))
           : "-"}{" "}
         {tokenOut.symbol}
       </p>
+      <Tooltip id="rate-tooltip" />
 
-      {/* Error */}
+      {/* Same token error */}
       {isSameToken && (
-        <p className="text-error text-sm mt-2">❌ No puedes seleccionar el mismo token para ambos lados.</p>
+        <p className="text-error text-sm mt-2 flex items-center gap-1">
+          <FiAlertCircle size={16} />
+          No puedes seleccionar el mismo token para ambos lados.
+        </p>
       )}
 
-      {/* Swap button */}
-      <button
-        className="btn btn-primary w-full py-3 text-lg"
-        disabled={!isFormValid || isApproving || isSwapping}
-        onClick={handleSwap}
-      >
-        {isApproving ? "Aprobando..." : isSwapping ? "Intercambiando..." : "Intercambiar"}
-        {(isApproving || isSwapping) && <span className="loading loading-spinner loading-sm ml-2" />}
-      </button>
+      {/* Wallet connect / swap button */}
+      <ConnectButton.Custom>
+        {({ account, chain, openConnectModal, mounted }) => {
+          const connected = mounted && account && chain;
+
+          if (!connected) {
+            return (
+              <button className="btn btn-primary w-full py-3 text-lg" onClick={openConnectModal} type="button">
+                Conectar billetera
+              </button>
+            );
+          }
+
+          return (
+            <button
+              className="btn btn-primary w-full py-3 text-lg"
+              disabled={!isFormValid || isApproving || isSwapping}
+              onClick={handleSwap}
+            >
+              {isApproving ? "Aprobando..." : isSwapping ? "Intercambiando..." : "Intercambiar"}
+              {(isApproving || isSwapping) && <span className="loading loading-spinner loading-sm ml-2" />}
+            </button>
+          );
+        }}
+      </ConnectButton.Custom>
 
       {/* Modal */}
       <TokenSelectorModal
@@ -247,6 +292,6 @@ export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
         }}
         tokenList={AVAILABLE_TOKENS}
       />
-    </div>
+    </motion.div>
   );
 };

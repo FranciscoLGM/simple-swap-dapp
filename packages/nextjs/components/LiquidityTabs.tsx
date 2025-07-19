@@ -1,6 +1,9 @@
+"use client";
+
 import { FC, useState } from "react";
 import { AddLiquidityWithApprovalForm } from "./AddLiquidityWithApprovalForm";
 import { RemoveLiquidityWithApprovalForm } from "./RemoveLiquidityWithApprovalForm";
+import { AnimatePresence, motion } from "framer-motion";
 import { Address } from "viem";
 
 interface Props {
@@ -13,36 +16,49 @@ interface Props {
 export const LiquidityTabs: FC<Props> = ({ tokenA, tokenB, lpTokenContract, spender }) => {
   const [activeTab, setActiveTab] = useState<"add" | "remove">("add");
 
-  const tabStyle = "tab transition-all duration-200";
+  const tabs = [
+    { key: "add", label: "Agregar" },
+    { key: "remove", label: "Remover" },
+  ] as const;
 
   return (
     <div className="max-w-md mx-auto space-y-4">
+      {/* Tabs */}
       <div role="tablist" className="tabs tabs-boxed justify-center">
-        <button
-          className={`${tabStyle} ${activeTab === "add" ? "tab-active" : ""}`}
-          onClick={() => setActiveTab("add")}
-        >
-          Agregar
-        </button>
-        <button
-          className={`${tabStyle} ${activeTab === "remove" ? "tab-active" : ""}`}
-          onClick={() => setActiveTab("remove")}
-        >
-          Remover
-        </button>
+        {tabs.map(({ key, label }) => (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={activeTab === key}
+            className={`tab transition-all duration-200 ${activeTab === key ? "tab-active" : ""}`}
+            onClick={() => setActiveTab(key)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-        {activeTab === "add" && <AddLiquidityWithApprovalForm tokenA={tokenA} tokenB={tokenB} spender={spender} />}
-        {activeTab === "remove" && (
-          <RemoveLiquidityWithApprovalForm
-            tokenA={tokenA}
-            tokenB={tokenB}
-            lpTokenContract={lpTokenContract}
-            spender={spender}
-          />
-        )}
-      </div>
+      {/* Animated tab content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 24 }}
+          transition={{ duration: 0.3 }}
+        >
+          {activeTab === "add" ? (
+            <AddLiquidityWithApprovalForm tokenA={tokenA} tokenB={tokenB} spender={spender} />
+          ) : (
+            <RemoveLiquidityWithApprovalForm
+              tokenA={tokenA}
+              tokenB={tokenB}
+              lpTokenContract={lpTokenContract}
+              spender={spender}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };

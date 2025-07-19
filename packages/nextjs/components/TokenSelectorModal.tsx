@@ -1,11 +1,14 @@
-import { FC, useEffect, useRef } from "react";
+"use client";
+
+import { Fragment } from "react";
 import Image from "next/image";
-import { Address } from "viem";
+import { Dialog, Transition } from "@headlessui/react";
+import { motion } from "framer-motion";
 
 export interface TokenOption {
-  symbol: string;
   name: string;
-  address: Address;
+  symbol: string;
+  address: string;
 }
 
 interface Props {
@@ -15,82 +18,73 @@ interface Props {
   tokenList: TokenOption[];
 }
 
-/**
- * Modal accesible y optimizado para seleccionar tokens.
- */
-export const TokenSelectorModal: FC<Props> = ({ isOpen, onClose, onSelect, tokenList }) => {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Escape key to close modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    if (isOpen) document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // Focus trap when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      modalRef.current?.focus();
-    }
-  }, [isOpen]);
-
-  const handleSelect = (token: TokenOption) => {
-    onSelect(token);
-    onClose();
-  };
-
-  if (!isOpen) return null;
-
+export const TokenSelectorModal = ({ isOpen, onClose, onSelect, tokenList }: Props) => {
   return (
-    <div
-      className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Selector de token"
-    >
-      <div
-        ref={modalRef}
-        tabIndex={-1}
-        className="bg-base-100 p-6 rounded-2xl shadow-xl w-full max-w-sm space-y-6 animate-in slide-in-from-bottom-4 duration-300 outline-none"
-      >
-        <h3 className="text-lg font-semibold">Seleccionar token</h3>
+    <Transition show={isOpen} as={Fragment}>
+      <Dialog onClose={onClose} className="relative z-50">
+        {/* Overlay */}
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-200"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-150"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+        </Transition.Child>
 
-        <div className="flex flex-col gap-3">
-          {tokenList.map(token => (
-            <button
-              key={token.symbol}
-              onClick={() => handleSelect(token)}
-              className="btn btn-outline justify-between items-center px-4 py-3 rounded-lg hover:bg-base-200 focus-visible:ring focus-visible:ring-primary transition"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <Image
-                  src={`/tokens/${token.symbol}.svg`}
-                  alt={token.symbol}
-                  className="w-6 h-6 shrink-0"
-                  aria-hidden="true"
-                  width={24}
-                  height={24}
-                />
-                <div className="text-left min-w-0 truncate">
-                  <div className="truncate font-medium text-base-content">{token.name}</div>
-                  <div className="text-xs text-gray-400 truncate">{token.symbol}</div>
-                </div>
-              </div>
+        {/* Modal */}
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0 translate-y-4 scale-95"
+            enterTo="opacity-100 translate-y-0 scale-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100 translate-y-0 scale-100"
+            leaveTo="opacity-0 translate-y-4 scale-95"
+          >
+            <motion.div className="w-full max-w-md rounded-xl bg-base-200 p-4 shadow-xl border border-base-300">
+              <Dialog.Title as="h2" className="text-base font-semibold text-center mb-3">
+                Selecciona un token
+              </Dialog.Title>
 
-              <span className="text-xs text-gray-400 hidden sm:inline-block">
-                {token.address.slice(0, 6)}...{token.address.slice(-4)}
-              </span>
-            </button>
-          ))}
+              <ul className="space-y-2 max-h-80 overflow-y-auto scrollbar-thin pr-1">
+                {tokenList.map(token => (
+                  <li key={token.address}>
+                    <button
+                      onClick={() => {
+                        onSelect(token);
+                        onClose();
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors duration-200 hover:bg-primary hover:text-primary-content bg-base-100 border border-base-300 shadow-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Image
+                          src={`/tokens/${token.symbol}.svg`}
+                          alt={token.symbol}
+                          width={24}
+                          height={24}
+                          className="rounded-full"
+                        />
+                        <div className="text-left">
+                          <p className="font-medium text-sm">{token.name}</p>
+                          <p className="text-xs text-gray-500">{token.symbol}</p>
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-400 truncate max-w-[72px] text-right">
+                        {token.address.slice(0, 6)}...{token.address.slice(-4)}
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </Transition.Child>
         </div>
-
-        <button className="btn btn-ghost w-full rounded-full" onClick={onClose} aria-label="Cancelar selección">
-          Cancelar
-        </button>
-      </div>
-    </div>
+      </Dialog>
+    </Transition>
   );
 };

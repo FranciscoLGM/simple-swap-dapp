@@ -1,7 +1,13 @@
+"use client";
+
 import { useEffect, useState } from "react";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import confetti from "canvas-confetti";
+import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { Address, parseEther } from "viem";
+// import { FiAlertCircle } from "react-icons/fi";
+import { Tooltip } from "react-tooltip";
+import { Address, formatUnits, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useGlobalErrorToast } from "~~/hooks/simple-swap/useGlobalErrorToast";
@@ -19,95 +25,94 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
 
   const [amountA, setAmountA] = useState("");
   const [amountB, setAmountB] = useState("");
+  const [allowanceOkA, setAllowanceOkA] = useState(false);
+  const [allowanceOkB, setAllowanceOkB] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
-  const [allowanceAOk, setAllowanceAOk] = useState(false);
-  const [allowanceBOk, setAllowanceBOk] = useState(false);
 
+  const slippage = 0.005;
   const isFormValid = Number(amountA) > 0 && Number(amountB) > 0;
 
-  const { writeContractAsync: approveTokenA } = useScaffoldWriteContract({ contractName: "TokenA" });
-  const { writeContractAsync: approveTokenB } = useScaffoldWriteContract({ contractName: "TokenB" });
+  const { writeContractAsync: approveA } = useScaffoldWriteContract({ contractName: "TokenA" });
+  const { writeContractAsync: approveB } = useScaffoldWriteContract({ contractName: "TokenB" });
   const { writeContractAsync: addLiquidity } = useScaffoldWriteContract({ contractName: "SimpleSwap" });
 
-  const { data: allowanceA, error: errorA } = useScaffoldReadContract({
+  const { data: allowanceA, error: errorAllowanceA } = useScaffoldReadContract({
     contractName: "TokenA",
     functionName: "allowance",
     args: [address!, spender],
     watch: true,
   });
 
-  const { data: allowanceB, error: errorB } = useScaffoldReadContract({
+  const { data: allowanceB, error: errorAllowanceB } = useScaffoldReadContract({
     contractName: "TokenB",
     functionName: "allowance",
     args: [address!, spender],
     watch: true,
   });
 
-  useGlobalErrorToast(errorA);
-  useGlobalErrorToast(errorB);
+  useGlobalErrorToast(errorAllowanceA);
+  useGlobalErrorToast(errorAllowanceB);
 
-  // Validar allowance para TokenA
+  const { data: balanceA } = useScaffoldReadContract({
+    contractName: "TokenA",
+    functionName: "balanceOf",
+    args: [address!],
+    watch: true,
+  });
+
+  const { data: balanceB } = useScaffoldReadContract({
+    contractName: "TokenB",
+    functionName: "balanceOf",
+    args: [address!],
+    watch: true,
+  });
+
   useEffect(() => {
     try {
-      if (!allowanceA || !amountA) return setAllowanceAOk(false);
+      if (!allowanceA || !amountA || isNaN(Number(amountA))) return setAllowanceOkA(false);
       const parsed = parseEther(amountA);
-      setAllowanceAOk(BigInt(allowanceA) >= parsed);
+      setAllowanceOkA(BigInt(allowanceA) >= parsed);
     } catch {
-      setAllowanceAOk(false);
+      setAllowanceOkA(false);
     }
   }, [allowanceA, amountA]);
 
-  // Validar allowance para TokenB
   useEffect(() => {
     try {
-      if (!allowanceB || !amountB) return setAllowanceBOk(false);
+      if (!allowanceB || !amountB || isNaN(Number(amountB))) return setAllowanceOkB(false);
       const parsed = parseEther(amountB);
-      setAllowanceBOk(BigInt(allowanceB) >= parsed);
+      setAllowanceOkB(BigInt(allowanceB) >= parsed);
     } catch {
-      setAllowanceBOk(false);
+      setAllowanceOkB(false);
     }
   }, [allowanceB, amountB]);
 
-  const handleApprove = async () => {
-    setIsApproving(true);
-    try {
-      if (!allowanceAOk && amountA) {
-        const parsedA = parseEther(amountA);
-        const toastId = toast.loading("Aprobando TKA...");
-        await approveTokenA({ functionName: "approve", args: [spender, parsedA] });
-        toast.dismiss(toastId);
-        toast.success("TKA aprobado");
-        setAllowanceAOk(true);
-      }
-
-      if (!allowanceBOk && amountB) {
-        const parsedB = parseEther(amountB);
-        const toastId = toast.loading("Aprobando TKB...");
-        await approveTokenB({ functionName: "approve", args: [spender, parsedB] });
-        toast.dismiss(toastId);
-        toast.success("TKB aprobado");
-        setAllowanceBOk(true);
-      }
-    } catch (err) {
-      toast.error(parseViemErrorToMessage(err));
-    } finally {
-      setIsApproving(false);
-    }
-  };
-
   const handleAddLiquidity = async () => {
-    if (!isFormValid || !address || isApproving || isAdding) return;
-
-    const parsedA = parseEther(amountA);
-    const parsedB = parseEther(amountB);
-    const amountAMin = 0n;
-    const amountBMin = 0n;
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 180); // 3 minutos
+    if (!isFormValid || !address) return;
 
     try {
-      if (!allowanceAOk || !allowanceBOk) {
-        await handleApprove();
+      const parsedA = parseEther(amountA);
+      const parsedB = parseEther(amountB);
+      const minA = parsedA - (parsedA * BigInt(Math.floor(slippage * 10000))) / 10000n;
+      const minB = parsedB - (parsedB * BigInt(Math.floor(slippage * 10000))) / 10000n;
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 180);
+
+      if (!allowanceOkA) {
+        setIsApproving(true);
+        const toastId = toast.loading("Aprobando Token A...");
+        await approveA({ functionName: "approve", args: [spender, parsedA] });
+        toast.dismiss(toastId);
+        toast.success("Token A aprobado");
+        setAllowanceOkA(true);
+      }
+
+      if (!allowanceOkB) {
+        const toastId = toast.loading("Aprobando Token B...");
+        await approveB({ functionName: "approve", args: [spender, parsedB] });
+        toast.dismiss(toastId);
+        toast.success("Token B aprobado");
+        setAllowanceOkB(true);
       }
 
       setIsAdding(true);
@@ -115,61 +120,124 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
 
       await addLiquidity({
         functionName: "addLiquidity",
-        args: [tokenA, tokenB, parsedA, parsedB, amountAMin, amountBMin, address, deadline],
+        args: [tokenA, tokenB, parsedA, parsedB, minA, minB, address, deadline],
       });
 
       toast.dismiss(toastId);
-      toast.success("Liquidez añadida");
+      toast.success("Liquidez agregada");
       confetti({ particleCount: 100, spread: 60, origin: { y: 0.6 } });
+
       setAmountA("");
       setAmountB("");
     } catch (err) {
       toast.error(parseViemErrorToMessage(err));
     } finally {
+      setIsApproving(false);
       setIsAdding(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="card bg-base-200 shadow-xl rounded-2xl p-6 space-y-4">
-        <h2 className="text-xl font-semibold text-center">Agregar Liquidez</h2>
-
-        <div className="form-control">
-          <label className="label text-sm text-gray-400">Cantidad de TKA</label>
-          <input
-            className="input input-bordered w-full text-lg"
-            type="number"
-            placeholder="0.0"
-            value={amountA}
-            onChange={e => setAmountA(formatDecimalInput(e.target.value))}
-            disabled={isApproving || isAdding}
-          />
-          {allowanceAOk && <p className="text-xs text-green-500 mt-1">✔ TokenA aprobado</p>}
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 24 }}
+      transition={{ duration: 0.3 }}
+      className="card rounded-2xl shadow-xl bg-base-200 p-6 space-y-4 max-w-md w-full mx-auto"
+    >
+      <div className="bg-base-300 p-4 rounded-xl">
+        <label className="text-sm text-gray-400">Cantidad Token A</label>
+        <input
+          className="input input-bordered bg-base-100 text-lg w-full mt-1"
+          placeholder="0.0"
+          type="number"
+          step="any"
+          value={amountA}
+          onChange={e => setAmountA(formatDecimalInput(e.target.value, 6))}
+          disabled={isApproving || isAdding}
+          data-tooltip-id="tooltip-token-a"
+          data-tooltip-content="Cantidad del primer token a depositar"
+        />
+        {/* MAX button */}
+        <div className="flex justify-end mt-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (balanceA) setAmountA(formatDecimalInput(formatUnits(balanceA, 18), 6));
+            }}
+            disabled={!balanceA || isApproving || isAdding}
+            className="px-3 py-1 rounded-full text-xs font-medium transition-colors duration-200 border border-primary text-primary hover:bg-primary hover:text-primary-content disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            MAX
+          </button>
         </div>
 
-        <div className="form-control">
-          <label className="label text-sm text-gray-400">Cantidad de TKB</label>
-          <input
-            className="input input-bordered w-full text-lg"
-            type="number"
-            placeholder="0.0"
-            value={amountB}
-            onChange={e => setAmountB(formatDecimalInput(e.target.value))}
-            disabled={isApproving || isAdding}
-          />
-          {allowanceBOk && <p className="text-xs text-green-500 mt-1">✔ TokenB aprobado</p>}
-        </div>
-
-        <button
-          className="btn btn-primary w-full py-3 text-lg"
-          onClick={handleAddLiquidity}
-          disabled={!isFormValid || isApproving || isAdding}
-        >
-          {isApproving ? "Aprobando..." : isAdding ? "Añadiendo..." : "Agregar Liquidez"}
-          {(isApproving || isAdding) && <span className="loading loading-spinner loading-sm ml-2" />}
-        </button>
+        <Tooltip id="tooltip-token-a" />
       </div>
-    </div>
+
+      <div className="bg-base-300 p-4 rounded-xl">
+        <label className="text-sm text-gray-400">Cantidad Token B</label>
+        <input
+          className="input input-bordered bg-base-100 text-lg w-full mt-1"
+          placeholder="0.0"
+          type="number"
+          step="any"
+          value={amountB}
+          onChange={e => setAmountB(formatDecimalInput(e.target.value, 6))}
+          disabled={isApproving || isAdding}
+          data-tooltip-id="tooltip-token-b"
+          data-tooltip-content="Cantidad del segundo token a depositar"
+        />
+        {/* MAX button */}
+        <div className="flex justify-end mt-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (balanceB) setAmountB(formatDecimalInput(formatUnits(balanceB, 18), 6));
+            }}
+            disabled={!balanceB || isApproving || isAdding}
+            className="px-3 py-1 rounded-full text-xs font-medium transition-colors duration-200 border border-primary text-primary hover:bg-primary hover:text-primary-content disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            MAX
+          </button>
+        </div>
+
+        <Tooltip id="tooltip-token-b" />
+      </div>
+
+      {/* {address && (!allowanceOkA || !allowanceOkB) && (
+        <p className="text-warning text-sm mt-2 flex items-center gap-1">
+          <FiAlertCircle size={16} />
+          Se solicitará la aprobación de los tokens antes de agregar liquidez.
+        </p>
+      )} */}
+
+      <ConnectButton.Custom>
+        {({ account, chain, openConnectModal, mounted }) => {
+          const connected = mounted && account && chain;
+          if (!connected) {
+            return (
+              <button className="btn btn-primary w-full py-3 text-lg" onClick={openConnectModal}>
+                Conectar billetera
+              </button>
+            );
+          }
+
+          return (
+            <button
+              className="btn btn-primary w-full py-3 text-lg"
+              disabled={!isFormValid || isApproving || isAdding}
+              onClick={handleAddLiquidity}
+              data-tooltip-id="tooltip-submit"
+              data-tooltip-content="Agregar liquidez al pool"
+            >
+              {isApproving ? "Aprobando..." : isAdding ? "Agregando..." : "Agregar liquidez"}
+              {(isApproving || isAdding) && <span className="loading loading-spinner loading-sm ml-2" />}
+              <Tooltip id="tooltip-submit" />
+            </button>
+          );
+        }}
+      </ConnectButton.Custom>
+    </motion.div>
   );
 };

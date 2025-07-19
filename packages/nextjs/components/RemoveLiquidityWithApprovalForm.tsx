@@ -1,5 +1,9 @@
+"use client";
+
 import { useEffect, useState } from "react";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import confetti from "canvas-confetti";
+import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { Address, formatUnits, parseEther } from "viem";
 import { useAccount } from "wagmi";
@@ -27,13 +31,8 @@ export const RemoveLiquidityWithApprovalForm = ({ tokenA, tokenB, lpTokenContrac
   const isFormValid = Number(liquidity) > 0;
   const PROTOCOL_LOCKED_LP = 1_000_000_000_000n;
 
-  const { writeContractAsync: approveLP } = useScaffoldWriteContract({
-    contractName: lpTokenContract,
-  });
-
-  const { writeContractAsync: removeLiquidity } = useScaffoldWriteContract({
-    contractName: "SimpleSwap",
-  });
+  const { writeContractAsync: approveLP } = useScaffoldWriteContract({ contractName: lpTokenContract });
+  const { writeContractAsync: removeLiquidity } = useScaffoldWriteContract({ contractName: "SimpleSwap" });
 
   const { data: allowance, error: allowanceError } = useScaffoldReadContract({
     contractName: lpTokenContract,
@@ -91,7 +90,7 @@ export const RemoveLiquidityWithApprovalForm = ({ tokenA, tokenB, lpTokenContrac
     const min = maxA < maxB ? maxA : maxB;
 
     setMaxLPToWithdraw(formatUnits(min, 18));
-  }, [reserves, balanceA, balanceB, totalSupply, PROTOCOL_LOCKED_LP]);
+  }, [reserves, balanceA, balanceB, totalSupply]);
 
   useEffect(() => {
     try {
@@ -147,46 +146,73 @@ export const RemoveLiquidityWithApprovalForm = ({ tokenA, tokenB, lpTokenContrac
   const formattedMax = parseFloat(maxLPToWithdraw).toFixed(6);
 
   return (
-    <div className="card bg-base-200 p-6 rounded-2xl shadow-lg max-w-md w-full mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Remover Liquidez</h2>
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 24 }}
+      transition={{ duration: 0.3 }}
+      className="card bg-base-200 p-6 rounded-2xl shadow-xl max-w-md w-full mx-auto"
+    >
+      <div className="form-control mb-4">
+        <label className="label">Cantidad de LP tokens (SS-LP)</label>
 
-        <div className="form-control">
-          <label className="label">Cantidad de LP tokens (SS-LP)</label>
-          <input
-            className="input input-bordered w-full"
-            type="number"
-            step="any"
-            min="0"
-            placeholder="0.0"
-            value={liquidity}
-            onChange={e => {
-              try {
-                const val = e.target.value;
-                if (!val || parseFloat(val) <= parseFloat(maxLPToWithdraw)) {
-                  setLiquidity(formatDecimalInput(val, 6));
-                } else {
-                  toast.error("Supera el máximo disponible.");
-                }
-              } catch {
-                setLiquidity("");
-              }
-            }}
-            disabled={isApproving || isRemoving}
-          />
+        <input
+          className="input input-bordered w-full"
+          type="number"
+          step="any"
+          min="0"
+          placeholder="0.0"
+          value={liquidity}
+          onChange={e => {
+            const val = e.target.value;
+            if (!val || parseFloat(val) <= parseFloat(maxLPToWithdraw)) {
+              setLiquidity(formatDecimalInput(val, 6));
+            } else {
+              toast.error("Supera el máximo disponible.");
+            }
+          }}
+          disabled={isApproving || isRemoving}
+        />
 
-          {allowanceOk && <p className="text-xs text-green-500 mt-1">✔ Token LP aprobado</p>}
-          <p className="text-xs text-gray-500 mt-1">Máximo disponible: {formattedMax} SS-LP</p>
+        {/* Botón MAX moderno debajo y a la derecha */}
+        <div className="flex justify-end mt-2">
+          <button
+            type="button"
+            onClick={() => setLiquidity(formatDecimalInput(maxLPToWithdraw, 6))}
+            disabled={parseFloat(maxLPToWithdraw) === 0 || isApproving || isRemoving}
+            className="px-3 py-1 rounded-full text-xs font-medium transition-colors duration-200 border border-primary text-primary hover:bg-primary hover:text-primary-content disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            MAX
+          </button>
         </div>
 
-        <button
-          className="btn btn-primary w-full py-3 text-lg"
-          onClick={handleRemoveLiquidity}
-          disabled={!isFormValid || isApproving || isRemoving}
-        >
-          {isApproving || isRemoving ? <span className="loading loading-spinner loading-sm" /> : "Remover Liquidez"}
-        </button>
+        {allowanceOk && <p className="text-xs text-green-500 mt-2">✔ Token LP aprobado</p>}
+        <p className="text-xs text-gray-500 mt-1">Máximo disponible: {formattedMax} SS-LP</p>
       </div>
-    </div>
+
+      <ConnectButton.Custom>
+        {({ account, chain, openConnectModal, mounted }) => {
+          const connected = mounted && account && chain;
+          if (!connected) {
+            return (
+              <button className="btn btn-primary w-full py-3 text-lg" onClick={openConnectModal}>
+                Conectar billetera
+              </button>
+            );
+          }
+
+          return (
+            <button
+              className="btn btn-primary w-full py-3 text-lg"
+              onClick={handleRemoveLiquidity}
+              disabled={!isFormValid || isApproving || isRemoving}
+            >
+              {isApproving ? "Aprobando..." : isRemoving ? "Removiendo..." : "Remover Liquidez"}
+              {(isApproving || isRemoving) && <span className="loading loading-spinner loading-sm ml-2" />}
+            </button>
+          );
+        }}
+      </ConnectButton.Custom>
+    </motion.div>
   );
 };

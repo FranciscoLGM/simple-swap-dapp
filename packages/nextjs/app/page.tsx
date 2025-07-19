@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { NextPage } from "next";
 import { LiquidityTabs } from "~~/components/LiquidityTabs";
 import { SwapDashboard } from "~~/components/SwapDashboard";
@@ -24,7 +25,7 @@ const DexPage: NextPage = () => {
     <main className="flex flex-col items-center justify-start min-h-screen px-4 py-10 bg-base-100">
       <h1 className="text-3xl font-bold mb-6 text-base-content">SimpleSwap</h1>
 
-      {/* Navegación de tabs estilo Uniswap */}
+      {/* Navegación de tabs */}
       <div
         className="flex space-x-2 bg-base-100/20 p-1 rounded-full mb-8 shadow-sm"
         role="tablist"
@@ -46,17 +47,46 @@ const DexPage: NextPage = () => {
         ))}
       </div>
 
-      {/* Contenedor central responsivo */}
-      <section id={`tab-${activeTab}`} className="w-full max-w-md mx-auto">
-        {activeTab === "swap" && <SwapWithApprovalBox spender={SIMPLE_SWAP} />}
+      {/* Contenido central con animaciones suaves */}
+      <section className="w-full max-w-md mx-auto min-h-[400px]">
+        <AnimatePresence mode="wait">
+          {activeTab === "swap" && (
+            <motion.div
+              key="swap"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <SwapWithApprovalBox spender={SIMPLE_SWAP} />
+            </motion.div>
+          )}
 
-        {activeTab === "liquidity" && (
-          <div className="flex flex-col gap-6">
-            <LiquidityTabs tokenA={TOKEN_A} tokenB={TOKEN_B} lpTokenContract="SimpleSwap" spender={SIMPLE_SWAP} />
-          </div>
-        )}
+          {activeTab === "liquidity" && (
+            <motion.div
+              key="liquidity"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col gap-6"
+            >
+              <LiquidityTabs tokenA={TOKEN_A} tokenB={TOKEN_B} lpTokenContract="SimpleSwap" spender={SIMPLE_SWAP} />
+            </motion.div>
+          )}
 
-        {activeTab === "dashboard" && <SwapDashboard tokenA={TOKEN_A} tokenB={TOKEN_B} lpTokenContract="SimpleSwap" />}
+          {activeTab === "dashboard" && (
+            <motion.div
+              key="dashboard"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <SwapDashboard tokenA={TOKEN_A} tokenB={TOKEN_B} lpTokenContract="SimpleSwap" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
     </main>
   );

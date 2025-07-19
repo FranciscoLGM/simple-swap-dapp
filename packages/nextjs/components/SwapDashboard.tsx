@@ -1,4 +1,7 @@
+"use client";
+
 import { FC, useState } from "react";
+import { motion } from "framer-motion";
 import { Address, formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
@@ -21,6 +24,7 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
     args: [tokenA, tokenB],
     watch: true,
   });
+
   useGlobalErrorToast(reservesError);
 
   const { data: totalSupply, error: totalSupplyError } = useScaffoldReadContract({
@@ -28,6 +32,7 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
     functionName: "totalSupply",
     watch: true,
   });
+
   useGlobalErrorToast(totalSupplyError);
 
   const { data: userLPBalance } = useScaffoldReadContract({
@@ -82,20 +87,26 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
       ? formatDecimalInput((Number(reserves[0]) / Number(reserves[1])).toFixed(6))
       : "-";
 
-  const balanceAinTKB =
-    reserves && reserves[0] > 0n && reserves[1] > 0n && balanceA
-      ? formatDecimalInput(((Number(balanceA) * Number(reserves[1])) / Number(reserves[0]) / 1e18).toFixed(4))
-      : "-";
-
   const balanceBinTKA =
     reserves && reserves[0] > 0n && reserves[1] > 0n && balanceB
       ? formatDecimalInput(((Number(balanceB) * Number(reserves[0])) / Number(reserves[1]) / 1e18).toFixed(4))
       : "-";
 
+  const balanceAinTKB =
+    reserves && reserves[0] > 0n && reserves[1] > 0n && balanceA
+      ? formatDecimalInput(((Number(balanceA) * Number(reserves[1])) / Number(reserves[0]) / 1e18).toFixed(4))
+      : "-";
+
   const tabStyle = "tab transition-all duration-200";
 
   return (
-    <div className="max-w-md mx-auto space-y-4">
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 24 }}
+      transition={{ duration: 0.3 }}
+      className="max-w-md mx-auto space-y-4"
+    >
       {/* Tabs */}
       <div role="tablist" className="tabs tabs-boxed justify-center">
         <button
@@ -148,7 +159,7 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
         {activeTab === "participation" && (
           <div className="card bg-base-200 p-6 rounded-2xl shadow-xl space-y-3 group relative">
             <p className="text-sm text-gray-400 mb-1">Tu participación en el pool</p>
-            <p className="text-lg font-bold mb-2">{userSharePercent > 0 ? userSharePercent.toFixed(4) : "0.0000"}%</p>
+            <p className="text-lg font-bold mb-2">{userSharePercent.toFixed(4)}%</p>
             <div className="w-full bg-base-300 h-3 rounded-full overflow-hidden">
               <div
                 className="bg-primary h-full transition-all duration-500"
@@ -181,6 +192,6 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
