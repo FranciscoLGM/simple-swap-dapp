@@ -1,174 +1,138 @@
-# 🦄 SimpleSwap DEX
+# 🦄 SimpleSwap – Decentralized Exchange (DEX) Monorepo
 
-**SimpleSwap** is a sleek and modern decentralized exchange (DEX) built with [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2), inspired by **Uniswap V2**.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)  
+[![Live App](https://img.shields.io/badge/Live%20App-Vercel-%23007ACC)](https://simpleswap-dex.vercel.app/)
 
-Users can:
-
-- 🔄 Swap between two ERC-20 tokens (`TokenA` ↔ `TokenB`)
-- 💧 Add and remove liquidity with slippage control
-- 📊 View real-time stats and balances
-- ⚡ Interact with live contracts deployed on **Sepolia**
-
-📍 **Live Demo**: [https://simpleswap-dex.vercel.app](https://simpleswap-dex.vercel.app)
+**SimpleSwap** is a fully functional decentralized exchange (DEX) inspired by Uniswap V2.  
+This monorepo contains both the **Solidity smart contracts** and the **modern frontend interface** built with Scaffold-ETH 2 and Next.js.
 
 ---
 
-## 🚀 Features
+## 🔍 Features
 
-- ✅ **Token Swap** with slippage and dynamic price preview
-- ✅ **Add/Remove Liquidity** with min amounts and approval checks
-- ✅ **Integrated Approvals** only when needed
-- ✅ **MAX Buttons** with contextual availability
-- ✅ **Confetti + Toasts** on success, visual feedback for all actions
-- ✅ **Modern UI** with dark/light themes, smooth animations, tooltips, modals
-- ✅ **Wallet Integration** via RainbowKit + Wagmi
-- ✅ **Responsive Design** for mobile and desktop
-- ✅ **Optimized UX** with debounce, validation, error toasts, and more
+### ✅ Core Functionality
 
----
+- Add liquidity to a token pair pool
+- Remove liquidity and receive underlying tokens
+- Swap between two tokens with Uniswap V2-style pricing (constant product formula)
+- Slippage tolerance calculation (`minAmount`)
+- Token approval (with `approve()` logic and support for `ERC20Permit`-ready tokens)
+- Clean, mobile-responsive UI with light/dark mode
+- User feedback: spinners, toasts, confetti, validation
 
-## 🛠️ Tech Stack
+### ⚙️ Tech Stack
 
-| Tool / Library             | Purpose                              |
-| -------------------------- | ------------------------------------ |
-| **Scaffold-ETH 2**         | Full-stack dApp framework            |
-| **Hardhat + Viem**         | Smart contract development and calls |
-| **Next.js (App Router)**   | Frontend structure and routing       |
-| **Wagmi + RainbowKit**     | Web3 wallet integration              |
-| **Tailwind CSS + DaisyUI** | Styling system + light/dark themes   |
-| **Framer Motion**          | UI animations                        |
-| **React Hot Toast**        | Feedback system for actions          |
-| **Canvas Confetti**        | 🎉 Effects on success                |
+| Layer        | Tech                       |
+| ------------ | -------------------------- |
+| Blockchain   | Solidity, Hardhat, viem    |
+| Frontend     | Next.js, Tailwind, DaisyUI |
+| Fullstack    | Scaffold-ETH 2             |
+| Animations   | tailwindcss-animate        |
+| Smart Wallet | viem + wagmi               |
+| Deployment   | Vercel (frontend)          |
 
 ---
 
-## 📁 Project Structure
+## 🧱 Monorepo Structure
 
 ```
 
-packages/
-├── hardhat/ # Solidity contracts and deployments
-│ ├── contracts/ # SimpleSwap + Tokens
-│ └── deploy/ # Deploy scripts
-└── nextjs/ # Frontend dApp
-├── app/ # App Router (root: `page.tsx`)
-├── components/ # UI components (Swap, Add/Remove, etc.)
-├── hooks/ # Custom hooks (read/write + UX logic)
-├── utils/ # Input parsers, math helpers, error formatters
-├── styles/ # Tailwind/DaisyUI themes and animations
-└── public/tokens/ # Token icons (e.g. TKA.svg, TKB.svg)
+.
+├── contracts/               # Solidity contracts (SimpleSwap, LP token, ERC20 tokens)
+├── packages/
+│   └── nextjs/              # Frontend app (Scaffold-ETH 2 + Next.js)
+├── scripts/                 # Hardhat deployment scripts
+├── deployments/             # Chain-specific contract deployment records
+├── hardhat.config.ts        # Hardhat config
+└── README.md                # This file
 
 ```
 
 ---
 
-## ⚙️ Getting Started (Local Dev)
+## 🚀 Deployment
 
-### 1. Clone the repository
+### 🌐 Live App
+
+SimpleSwap is live and deployed on Vercel:  
+🔗 [https://simpleswap-dex.vercel.app](https://simpleswap-dex.vercel.app)
+
+### 📦 Contracts
+
+Contracts can be deployed locally or to a testnet using:
+
+```bash
+yarn deploy
+```
+
+---
+
+## 🧪 Local Development
+
+### 📥 Installation
 
 ```bash
 git clone https://github.com/FranciscoLGM/simple-swap-dapp.git
 cd simple-swap-dapp
-```
-
-### 2. Install dependencies
-
-```bash
 yarn install
 ```
 
-### 3. Configure environment variables
-
-Create `.env` inside `packages/nextjs/`:
-
-```env
-NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key
-NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_walletconnect_project_id
-```
-
-> 🔑 Get your keys from:
->
-> - [Alchemy](https://dashboard.alchemy.com)
-> - [WalletConnect](https://cloud.walletconnect.com)
-
-### 4. Deploy contracts to Sepolia
+### 📡 Run Local Environment
 
 ```bash
-cd packages/hardhat
-yarn deploy --network sepolia
-```
-
-> 🔄 Update frontend contract addresses after deployment.
-
----
-
-## ▶️ Run the Frontend
-
-```bash
-cd packages/nextjs
-yarn dev
-```
-
-Open in browser: [http://localhost:3000](http://localhost:3000)
-
----
-
-## 🧪 Available Scripts
-
-```bash
-# Run all Hardhat tests
-yarn test
-
-# Lint frontend code
-yarn lint
-
-# Build frontend for production
-yarn build
+yarn chain         # Starts local blockchain (anvil)
+yarn deploy        # Deploy contracts to local chain
+yarn start         # Starts frontend at http://localhost:3000
 ```
 
 ---
 
-## ✨ UI/UX Highlights
+## 🔐 Main Contracts
 
-- 🧿 **Token Selector** Modal with SVG icons and animation
-- 💬 **Tooltips** and dynamic error messages
-- 🔐 **Approvals** only when needed (with toast + loading)
-- 📉 **Live pool stats** and token prices
-- 🔄 **Swap preview** updates dynamically (including slippage)
-- 🧠 **Debounced inputs** and validation feedback
-- 🎉 **Confetti + Toasts** after successful actions
-- 🌓 **Light/Dark Mode** via DaisyUI theme toggling
-- 📱 **Mobile-optimized layout**
+| Contract           | Description                               |
+| ------------------ | ----------------------------------------- |
+| `SimpleSwap`       | Core DEX contract (Uniswap V2 style pool) |
+| `TokenA`, `TokenB` | ERC20 mock tokens for testing or demo     |
+| `SimpleSwap LP`    | Liquidity provider token                  |
 
 ---
 
-## 📦 Deployment (Vercel)
+## 🌈 UI Highlights
 
-This dApp is **production-ready** and deployed at:
-
-🌐 [https://simpleswap-dex.vercel.app](https://simpleswap-dex.vercel.app)
-
-To deploy your own version:
-
-1. Go to [https://vercel.com](https://vercel.com)
-2. Click **Import Project** and select your Git repo
-3. Set `packages/nextjs` as the root directory
-4. Add the `.env` variables in **Vercel dashboard**
-5. Click **Deploy**
+- Token selection modal (Uniswap-style)
+- Swap direction switch (`tokenIn` ↔ `tokenOut`)
+- Slippage auto-calculation for `minOut`/`minAmount`
+- `approve()` optimization to avoid redundant signatures
+- Realtime error validation and visual feedback
+- Prevents selecting the same token in both fields
+- Clean, responsive design with soft animations
 
 ---
 
-## 🙋‍♂️ Author
+## 🧠 Design Inspiration
 
-Built with 💜 by **Francisco López G**
-
-- Based on [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2)
-- Inspired by **Uniswap V2** – reimagined for simplicity and clarity
+SimpleSwap is inspired by [Uniswap V2](https://docs.uniswap.org/protocol/V2),
+built as a minimal yet educational clone using modern frontend tooling and clean smart contract architecture.
+Based on [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2), it enables rapid fullstack dApp prototyping.
 
 ---
 
 ## 📄 License
 
-Licensed under the **MIT License** – open for personal and commercial use.
+Licensed under the MIT License.
+See [`LICENSE`](./LICENSE) for full details.
+
+---
+
+## ✨ Author
+
+Developed by **Francisco López G.**
+
+---
+
+## 💬 Contributions
+
+Contributions, suggestions, and PRs are welcome!
+If you find a bug or want to improve the app, feel free to open an issue.
 
 ---
