@@ -68,7 +68,7 @@ packages/
 
 ```bash
 git clone https://github.com/FranciscoLGM/simple-swap-dapp.git
-cd simpleswap-dex
+cd simple-swap-dapp
 ```
 
 ### 2. Install dependencies
