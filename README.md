@@ -1,36 +1,44 @@
 # 🦄 SimpleSwap DEX
 
-**SimpleSwap** is a modern decentralized exchange (DEX) built with [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2), inspired by **Uniswap V2**. It enables users to:
+**SimpleSwap** is a sleek and modern decentralized exchange (DEX) built with [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2), inspired by **Uniswap V2**.
 
-- 🔄 Swap ERC-20 tokens (`TokenA` ↔ `TokenB`)
-- 💧 Add or remove liquidity from the pool
-- 📊 Explore real-time pool and token metrics
-- ⚡ Enjoy a fast and intuitive Web3 experience
+Users can:
+
+- 🔄 Swap between two ERC-20 tokens (`TokenA` ↔ `TokenB`)
+- 💧 Add and remove liquidity with slippage control
+- 📊 View real-time stats and balances
+- ⚡ Interact with live contracts deployed on **Sepolia**
+
+📍 **Live Demo**: [https://simpleswap-dex.vercel.app](https://simpleswap-dex.vercel.app)
 
 ---
 
 ## 🚀 Features
 
-- ✅ Swap with slippage control and real-time price preview
-- ✅ Integrated token approvals (only when needed)
-- ✅ Add & remove liquidity with approval + feedback
-- ✅ Animated dashboard with pool stats and token balances
-- ✅ Clean responsive UI with modals, tabs, transitions
-- ✅ Interacts with deployed contracts on **Sepolia**
+- ✅ **Token Swap** with slippage and dynamic price preview
+- ✅ **Add/Remove Liquidity** with min amounts and approval checks
+- ✅ **Integrated Approvals** only when needed
+- ✅ **MAX Buttons** with contextual availability
+- ✅ **Confetti + Toasts** on success, visual feedback for all actions
+- ✅ **Modern UI** with dark/light themes, smooth animations, tooltips, modals
+- ✅ **Wallet Integration** via RainbowKit + Wagmi
+- ✅ **Responsive Design** for mobile and desktop
+- ✅ **Optimized UX** with debounce, validation, error toasts, and more
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Tool / Library             | Role                                   |
-| -------------------------- | -------------------------------------- |
-| **Scaffold-ETH 2**         | Smart contract + frontend framework    |
-| **Next.js (App Router)**   | Frontend structure & routing           |
-| **Hardhat + Viem**         | Contract development and interaction   |
-| **Tailwind CSS + DaisyUI** | Design system + themes (Uniswap-style) |
-| **RainbowKit + Wagmi**     | Wallet connection + blockchain hooks   |
-| **React Hot Toast**        | Feedback toasts (success/errors)       |
-| **Canvas Confetti**        | 🎉 Confetti on successful actions      |
+| Tool / Library             | Purpose                              |
+| -------------------------- | ------------------------------------ |
+| **Scaffold-ETH 2**         | Full-stack dApp framework            |
+| **Hardhat + Viem**         | Smart contract development and calls |
+| **Next.js (App Router)**   | Frontend structure and routing       |
+| **Wagmi + RainbowKit**     | Web3 wallet integration              |
+| **Tailwind CSS + DaisyUI** | Styling system + light/dark themes   |
+| **Framer Motion**          | UI animations                        |
+| **React Hot Toast**        | Feedback system for actions          |
+| **Canvas Confetti**        | 🎉 Effects on success                |
 
 ---
 
@@ -39,25 +47,27 @@
 ```
 
 packages/
-├── hardhat/            # Solidity contracts and deploy scripts
-└── nextjs/             # Frontend (Next.js + Wagmi + Viem)
-├── app/            # App Router pages (root DEX in `page.tsx`)
-├── components/     # UI components (SwapBox, Dashboard, etc.)
-├── hooks/          # Custom blockchain and UX hooks
-├── utils/          # Formatting, parsing, math helpers
-├── styles/         # Tailwind + DaisyUI themes (Uniswap-like)
-└── public/tokens/  # Token SVG icons (e.g. TKA.svg, TKB.svg)
+├── hardhat/ # Solidity contracts and deployments
+│ ├── contracts/ # SimpleSwap + Tokens
+│ └── deploy/ # Deploy scripts
+└── nextjs/ # Frontend dApp
+├── app/ # App Router (root: `page.tsx`)
+├── components/ # UI components (Swap, Add/Remove, etc.)
+├── hooks/ # Custom hooks (read/write + UX logic)
+├── utils/ # Input parsers, math helpers, error formatters
+├── styles/ # Tailwind/DaisyUI themes and animations
+└── public/tokens/ # Token icons (e.g. TKA.svg, TKB.svg)
 
 ```
 
 ---
 
-## ⚙️ Local Development
+## ⚙️ Getting Started (Local Dev)
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/simpleswap-dex.git
+git clone https://github.com/FranciscoLGM/simple-swap-dapp.git
 cd simpleswap-dex
 ```
 
@@ -69,26 +79,26 @@ yarn install
 
 ### 3. Configure environment variables
 
-Create a `.env` file inside `packages/nextjs/`:
+Create `.env` inside `packages/nextjs/`:
 
 ```env
-NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_key
+NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key
 NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_walletconnect_project_id
 ```
 
-> Get these from:
+> 🔑 Get your keys from:
 >
-> - [Alchemy Dashboard](https://dashboard.alchemy.com)
-> - [WalletConnect Cloud](https://cloud.walletconnect.com)
+> - [Alchemy](https://dashboard.alchemy.com)
+> - [WalletConnect](https://cloud.walletconnect.com)
 
-### 4. Deploy contracts (to Sepolia)
+### 4. Deploy contracts to Sepolia
 
 ```bash
 cd packages/hardhat
 yarn deploy --network sepolia
 ```
 
-> After deploying, update contract addresses in your frontend config.
+> 🔄 Update frontend contract addresses after deployment.
 
 ---
 
@@ -99,14 +109,14 @@ cd packages/nextjs
 yarn dev
 ```
 
-Visit: [http://localhost:3000](http://localhost:3000)
+Open in browser: [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 🧪 Useful Scripts
+## 🧪 Available Scripts
 
 ```bash
-# Run Hardhat contract tests
+# Run all Hardhat tests
 yarn test
 
 # Lint frontend code
@@ -118,42 +128,47 @@ yarn build
 
 ---
 
-## ✨ UI Overview
+## ✨ UI/UX Highlights
 
-Modern, Uniswap-inspired user interface:
-
-- 🎛️ Responsive layout with tabbed navigation
-- 🪄 Smooth transitions (`animate-in`, `fade-in`, etc.)
-- 🧿 Token selector modal with custom icons
-- ⚙️ Approvals only when needed (with visual feedback)
-- 🎉 Toasts + confetti on success
-- 🌙 Light/Dark themes via DaisyUI
-
----
-
-## 🚀 Deploy to Vercel
-
-SimpleSwap is Vercel-ready:
-
-1. Go to [Vercel](https://vercel.com)
-2. Import this repository
-3. Set the project root to `packages/nextjs`
-4. Add your `.env` variables in the Vercel dashboard
-5. Click **Deploy** 🚀
+- 🧿 **Token Selector** Modal with SVG icons and animation
+- 💬 **Tooltips** and dynamic error messages
+- 🔐 **Approvals** only when needed (with toast + loading)
+- 📉 **Live pool stats** and token prices
+- 🔄 **Swap preview** updates dynamically (including slippage)
+- 🧠 **Debounced inputs** and validation feedback
+- 🎉 **Confetti + Toasts** after successful actions
+- 🌓 **Light/Dark Mode** via DaisyUI theme toggling
+- 📱 **Mobile-optimized layout**
 
 ---
 
-## 👨‍💻 Author
+## 📦 Deployment (Vercel)
 
-Created with 💜 by **Francisco**
+This dApp is **production-ready** and deployed at:
 
-- 💡 Based on [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2)
-- 🎨 Inspired by Uniswap’s clean and intuitive DEX UI
+🌐 [https://simpleswap-dex.vercel.app](https://simpleswap-dex.vercel.app)
+
+To deploy your own version:
+
+1. Go to [https://vercel.com](https://vercel.com)
+2. Click **Import Project** and select your Git repo
+3. Set `packages/nextjs` as the root directory
+4. Add the `.env` variables in **Vercel dashboard**
+5. Click **Deploy**
+
+---
+
+## 🙋‍♂️ Author
+
+Built with 💜 by **Francisco López G**
+
+- Based on [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2)
+- Inspired by **Uniswap V2** – reimagined for simplicity and clarity
 
 ---
 
 ## 📄 License
 
-**MIT License** – free to use, remix and build upon.
+Licensed under the **MIT License** – open for personal and commercial use.
 
 ---
