@@ -39,7 +39,7 @@ This monorepo contains both the **Solidity smart contracts** and the **modern fr
 
 .
 ├── packages/
-    └── hardhat/             # Solidity contracts (SimpleSwap, LP token, ERC20 tokens)
+│   └── hardhat/             # Solidity contracts (SimpleSwap, LP token, ERC20 tokens)
 ├── packages/
 │   └── nextjs/              # Frontend app (Scaffold-ETH 2 + Next.js)
 ├── scripts/                 # Hardhat deployment scripts
