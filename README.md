@@ -1,4 +1,4 @@
-# 🦄 SimpleSwap – Decentralized Exchange (DEX) Monorepo
+# 🦄 SimpleSwap – Decentralized Exchange (DEX) 
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)  
 [![Live App](https://img.shields.io/badge/Live%20App-Vercel-%23007ACC)](https://simpleswap-dex.vercel.app/)
@@ -38,7 +38,7 @@ This monorepo contains both the **Solidity smart contracts** and the **modern fr
 ```
 
 .
-├── contracts/               # Solidity contracts (SimpleSwap, LP token, ERC20 tokens)
+├── packages/                                   └── hardhat/ # Solidity contracts (SimpleSwap, LP token, ERC20 tokens)
 ├── packages/
 │   └── nextjs/              # Frontend app (Scaffold-ETH 2 + Next.js)
 ├── scripts/                 # Hardhat deployment scripts
