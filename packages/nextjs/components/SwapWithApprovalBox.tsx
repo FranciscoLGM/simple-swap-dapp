@@ -70,6 +70,20 @@ export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
     watch: true,
   });
 
+  const { data: priceFromContract } = useScaffoldReadContract({
+    contractName: "SimpleSwap",
+    functionName: "getPrice",
+    args: [tokenIn.address, tokenOut.address],
+    watch: true,
+  });
+
+  const formattedPrice =
+    priceFromContract && priceFromContract > 0n
+      ? formatDecimalInput((Number(priceFromContract) / 1e18).toFixed(6))
+      : reserves && reserves[0] !== 0n && reserves[1] !== 0n
+        ? formatDecimalInput((Number(reserves[1]) / Number(reserves[0])).toFixed(6))
+        : "-";
+
   useGlobalErrorToast(allowanceError);
   useGlobalErrorToast(reservesError);
 
@@ -237,13 +251,9 @@ export const SwapWithApprovalBox: React.FC<Props> = ({ spender }) => {
       <p
         className="text-xs text-center text-gray-400 mt-2"
         data-tooltip-id="rate-tooltip"
-        data-tooltip-content="Tasa estimada con slippage del 0.5%"
+        data-tooltip-content="Tasa estimada desde contrato (getPrice), con fallback a reservas"
       >
-        1 {tokenIn.symbol} ≈{" "}
-        {reserves && reserves[0] !== 0n && reserves[1] !== 0n
-          ? formatDecimalInput((Number(reserves[1]) / Number(reserves[0])).toFixed(6))
-          : "-"}{" "}
-        {tokenOut.symbol}
+        1 {tokenIn.symbol} ≈ {formattedPrice} {tokenOut.symbol}
       </p>
       <Tooltip id="rate-tooltip" />
 
