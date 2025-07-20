@@ -1,139 +1,124 @@
-# 🦄 SimpleSwap – Decentralized Exchange (DEX) 
+# 🦄 SimpleSwap - Full-Stack Decentralized Exchange
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)  
-[![Live App](https://img.shields.io/badge/Live%20App-Vercel-%23007ACC)](https://simpleswap-dex.vercel.app/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  
+[![Solidity 0.8.0](https://img.shields.io/badge/Solidity-0.8.0-blue)](https://soliditylang.org)  
+[![Next.js 14](https://img.shields.io/badge/Next.js-14.0+-black)](https://nextjs.org/)  
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Available-green)](https://simpleswap-dex.vercel.app)
 
-**SimpleSwap** is a fully functional decentralized exchange (DEX) inspired by Uniswap V2.  
-This monorepo contains both the **Solidity smart contracts** and the **modern frontend interface** built with Scaffold-ETH 2 and Next.js.
+**SimpleSwap** is a complete decentralized exchange featuring:  
+- 🏗️ **Backend**: Production-grade AMM protocol (Uniswap V2 style)  
+- 🎨 **Frontend**: Modern interface with full swap/liquidity functionality  
 
----
-
-## 🔍 Features
-
-### ✅ Core Functionality
-
-- Add liquidity to a token pair pool
-- Remove liquidity and receive underlying tokens
-- Swap between two tokens with Uniswap V2-style pricing (constant product formula)
-- Slippage tolerance calculation (`minAmount`)
-- Token approval (with `approve()` logic and support for `ERC20Permit`-ready tokens)
-- Clean, mobile-responsive UI with light/dark mode
-- User feedback: spinners, toasts, confetti, validation
-
-### ⚙️ Tech Stack
-
-| Layer        | Tech                       |
-| ------------ | -------------------------- |
-| Blockchain   | Solidity, Hardhat, viem    |
-| Frontend     | Next.js, Tailwind, DaisyUI |
-| Fullstack    | Scaffold-ETH 2             |
-| Animations   | tailwindcss-animate        |
-| Smart Wallet | viem + wagmi               |
-| Deployment   | Vercel (frontend)          |
+🌐 **Live Demo**: [https://simpleswap-dex.vercel.app](https://simpleswap-dex.vercel.app)
 
 ---
 
-## 🧱 Monorepo Structure
+## ✨ Key Features
+
+### Core Protocol
+- 🔄 Token swaps using constant product formula (`x * y = k`)
+- 💧 Add/remove liquidity with proportional LP tokens
+- ⏱️ Deadline enforcement and slippage protection
+- 🛡️ Emergency controls (pause/unpause)
+- 📊 Real-time price oracle
+
+### Frontend
+- 📱 Fully responsive interface
+- 🌓 Light/dark mode toggle
+- 🎯 Real-time input validation
+- 🎉 Visual feedback (toasts, confetti animations)
+- ⚡ Optimized approval flow
+
+---
+
+## 🛠 Tech Stack
+
+| Layer          | Technologies                                                                 |
+|----------------|-----------------------------------------------------------------------------|
+| **Blockchain** | Solidity 0.8, Hardhat, OpenZeppelin Contracts                              |
+| **Frontend**   | Next.js 14 (App Router), Tailwind CSS, DaisyUI                             |
+| **Web3**       | Wagmi, RainbowKit, viem                                                   |
+| **Infra**      | Vercel (frontend), Alchemy/Infura (node providers)                        |
+
+---
+
+## 🏗 Project Structure
 
 ```
-
-.
+simple-swap-dapp/
 ├── packages/
-│   └── hardhat/             # Solidity contracts (SimpleSwap, LP token, ERC20 tokens)
-├── packages/
-│   └── nextjs/              # Frontend app (Scaffold-ETH 2 + Next.js)
-├── scripts/                 # Hardhat deployment scripts
-├── deployments/             # Chain-specific contract deployment records
-├── hardhat.config.ts        # Hardhat config
-└── README.md                # This file
-
+│   ├── hardhat/          # Smart contracts
+│   │   ├── contracts/    # Core AMM + ERC20 tokens
+│   │   └── deploy/       # Deployment scripts
+│   └── nextjs/           # DEX interface
+│       ├── app/          # Next.js routing
+│       ├── components/   # UI components
+│       └── hooks/        # Custom Web3 logic
+├── scripts/              # Utility scripts
+└── README.md             # Documentation
 ```
 
 ---
 
-## 🚀 Deployment
-
-### 🌐 Live App
-
-SimpleSwap is live and deployed on Vercel:  
-🔗 [https://simpleswap-dex.vercel.app](https://simpleswap-dex.vercel.app)
-
-### 📦 Contracts
-
-Contracts can be deployed locally or to a testnet using:
-
-```bash
-yarn deploy
-```
-
----
-
-## 🧪 Local Development
+## 🚀 Quick Start
 
 ### 📥 Installation
-
 ```bash
 git clone https://github.com/FranciscoLGM/simple-swap-dapp.git
 cd simple-swap-dapp
 yarn install
 ```
 
-### 📡 Run Local Environment
-
+### 🔨 Local Development
 ```bash
-yarn chain         # Starts local blockchain (anvil)
-yarn deploy        # Deploy contracts to local chain
-yarn start         # Starts frontend at http://localhost:3000
+# Start local blockchain
+yarn chain
+
+# Deploy contracts
+yarn deploy
+
+# Launch frontend
+yarn start
+```
+
+### 🌐 Testnet Deployment
+```bash
+cd packages/hardhat
+yarn deploy --network sepolia
 ```
 
 ---
 
-## 🔐 Main Contracts
+## 📦 Core Components
 
-| Contract           | Description                               |
-| ------------------ | ----------------------------------------- |
-| `SimpleSwap`       | Core DEX contract (Uniswap V2 style pool) |
-| `TokenA`, `TokenB` | ERC20 mock tokens for testing or demo     |
-| `SimpleSwap LP`    | Liquidity provider token                  |
+### Smart Contracts
+- `SimpleSwap.sol`: Core AMM logic  
+- `TokenA/TokenB.sol`: Test ERC20 tokens  
+- `SimpleSwapLP.sol`: Liquidity provider token  
 
----
-
-## 🌈 UI Highlights
-
-- Token selection modal (Uniswap-style)
-- Swap direction switch (`tokenIn` ↔ `tokenOut`)
-- Slippage auto-calculation for `minOut`/`minAmount`
-- `approve()` optimization to avoid redundant signatures
-- Realtime error validation and visual feedback
-- Prevents selecting the same token in both fields
-- Clean, responsive design with soft animations
+### Frontend Modules
+- **Swap Interface**: Token exchange  
+- **Liquidity Manager**: Pool management  
+- **Wallet Integration**: RainbowKit connector  
 
 ---
 
-## 🧠 Design Inspiration
-
-SimpleSwap is inspired by [Uniswap V2](https://docs.uniswap.org/protocol/V2),
-built as a minimal yet educational clone using modern frontend tooling and clean smart contract architecture.
-Based on [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2), it enables rapid fullstack dApp prototyping.
-
----
-
-## 📄 License
-
-Licensed under the MIT License.
-See [`LICENSE`](./LICENSE) for full details.
+## 🎨 UI Highlights
+- Animated token selector modal  
+- Direction toggle (↔) for swaps  
+- Approval optimization (skip redundant signatures)  
+- Interactive feedback (toasts, success animations)  
+- Mobile-optimized layout  
 
 ---
 
-## ✨ Author
-
-Developed by **Francisco López G.**
+## 📜 License
+MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
-## 💬 Contributions
-
-Contributions, suggestions, and PRs are welcome!
-If you find a bug or want to improve the app, feel free to open an issue.
+## ✍️ Author
+**Francisco López G.**  
+[GitHub](https://github.com/FranciscoLGM) 
 
 ---
