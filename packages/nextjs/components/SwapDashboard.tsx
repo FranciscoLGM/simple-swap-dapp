@@ -18,23 +18,24 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
   const { address } = useAccount();
   const [activeTab, setActiveTab] = useState<"pool" | "participation" | "balances">("pool");
 
+  // Reserves
   const { data: reserves, error: reservesError } = useScaffoldReadContract({
     contractName: lpTokenContract,
     functionName: "getReserves",
     args: [tokenA, tokenB],
     watch: true,
   });
-
   useGlobalErrorToast(reservesError);
 
+  // LP supply
   const { data: totalSupply, error: totalSupplyError } = useScaffoldReadContract({
     contractName: lpTokenContract,
     functionName: "totalSupply",
     watch: true,
   });
-
   useGlobalErrorToast(totalSupplyError);
 
+  // LP balance of user
   const { data: userLPBalance } = useScaffoldReadContract({
     contractName: lpTokenContract,
     functionName: "balanceOf",
@@ -42,6 +43,7 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
     watch: true,
   });
 
+  // Token balances
   const { data: balanceA } = useScaffoldReadContract({
     contractName: "TokenA",
     functionName: "balanceOf",
@@ -55,6 +57,32 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
     args: [address!],
     watch: true,
   });
+
+  // 🔁 On-chain prices from getPrice(tokenA, tokenB)
+  const { data: priceAToB, error: priceErrorAB } = useScaffoldReadContract({
+    contractName: "SimpleSwap",
+    functionName: "getPrice",
+    args: [tokenA, tokenB],
+    watch: true,
+  });
+
+  const { data: priceBToA, error: priceErrorBA } = useScaffoldReadContract({
+    contractName: "SimpleSwap",
+    functionName: "getPrice",
+    args: [tokenB, tokenA],
+    watch: true,
+  });
+
+  useGlobalErrorToast(priceErrorAB);
+  useGlobalErrorToast(priceErrorBA);
+
+  // Format helpers
+  const formatValue = (value: bigint | undefined, precision = 2) =>
+    value ? formatDecimalInput(formatUnits(value, 18), precision) : "0.00";
+
+  const tkaToTkbPrice = priceAToB ? formatDecimalInput(formatUnits(priceAToB, 18), 6) : "-";
+
+  const tkbToTkaPrice = priceBToA ? formatDecimalInput(formatUnits(priceBToA, 18), 6) : "-";
 
   const PROTOCOL_LOCKED_LP = 1_000_000_000_000n;
   const circulatingSupply = totalSupply ? totalSupply - PROTOCOL_LOCKED_LP : 0n;
@@ -73,19 +101,6 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
     reserves && typeof userLPBalance === "bigint" && circulatingSupply > 0n
       ? (reserves[1] * userLPBalance) / circulatingSupply
       : 0n;
-
-  const formatValue = (value: bigint | undefined, precision = 2) =>
-    value ? formatDecimalInput(formatUnits(value, 18), precision) : "0.00";
-
-  const tkaToTkbPrice =
-    reserves && reserves[0] > 0n && reserves[1] > 0n
-      ? formatDecimalInput((Number(reserves[1]) / Number(reserves[0])).toFixed(6))
-      : "-";
-
-  const tkbToTkaPrice =
-    reserves && reserves[0] > 0n && reserves[1] > 0n
-      ? formatDecimalInput((Number(reserves[0]) / Number(reserves[1])).toFixed(6))
-      : "-";
 
   const balanceBinTKA =
     reserves && reserves[0] > 0n && reserves[1] > 0n && balanceB
@@ -134,7 +149,7 @@ export const SwapDashboard: FC<Props> = ({ tokenA, tokenB, lpTokenContract }) =>
         {activeTab === "pool" && (
           <div className="card bg-base-200 p-6 rounded-2xl shadow-xl space-y-3">
             <div className="bg-base-300 p-4 rounded-xl">
-              <p className="text-sm text-gray-400 mb-1">Precios del pool</p>
+              <p className="text-sm text-gray-400 mb-1">Precios del pool (on-chain)</p>
               <p className="text-sm text-base-content font-semibold">1 TKA ≈ {tkaToTkbPrice} TKB</p>
               <p className="text-sm text-base-content font-semibold">1 TKB ≈ {tkbToTkaPrice} TKA</p>
             </div>
