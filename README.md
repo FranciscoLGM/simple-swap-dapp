@@ -20,7 +20,6 @@
 - 💧 Add/remove liquidity with proportional LP tokens
 - ⏱️ Deadline enforcement and slippage protection
 - 🛡️ Emergency controls (pause/unpause)
-- 📊 Real-time price oracle
 
 ### Frontend
 - 📱 Fully responsive interface
@@ -94,7 +93,6 @@ yarn deploy --network sepolia
 ### Smart Contracts
 - `SimpleSwap.sol`: Core AMM logic  
 - `TokenA/TokenB.sol`: Test ERC20 tokens  
-- `SimpleSwapLP.sol`: Liquidity provider token  
 
 ### Frontend Modules
 - **Swap Interface**: Token exchange  
