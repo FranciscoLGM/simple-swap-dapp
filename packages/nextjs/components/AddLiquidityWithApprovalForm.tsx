@@ -5,8 +5,6 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-// import { FiAlertCircle } from "react-icons/fi";
-import { Tooltip } from "react-tooltip";
 import { Address, formatUnits, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
@@ -25,6 +23,8 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
 
   const [amountA, setAmountA] = useState("");
   const [amountB, setAmountB] = useState("");
+  const [lastEdited, setLastEdited] = useState<"A" | "B">("A");
+
   const [allowanceOkA, setAllowanceOkA] = useState(false);
   const [allowanceOkB, setAllowanceOkB] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
@@ -51,8 +51,12 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
     watch: true,
   });
 
-  useGlobalErrorToast(errorAllowanceA);
-  useGlobalErrorToast(errorAllowanceB);
+  const { data: reserves, error: reservesError } = useScaffoldReadContract({
+    contractName: "SimpleSwap",
+    functionName: "getReserves",
+    args: [tokenA, tokenB],
+    watch: true,
+  });
 
   const { data: balanceA } = useScaffoldReadContract({
     contractName: "TokenA",
@@ -67,6 +71,10 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
     args: [address!],
     watch: true,
   });
+
+  useGlobalErrorToast(errorAllowanceA);
+  useGlobalErrorToast(errorAllowanceB);
+  useGlobalErrorToast(reservesError);
 
   useEffect(() => {
     try {
@@ -87,6 +95,29 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
       setAllowanceOkB(false);
     }
   }, [allowanceB, amountB]);
+
+  // 🔁 Calcular automáticamente el otro input si el pool ya tiene reservas
+  useEffect(() => {
+    if (!reserves || reserves[0] === 0n || reserves[1] === 0n) return;
+    try {
+      const reserveA = Number(reserves[0]);
+      const reserveB = Number(reserves[1]);
+
+      if (lastEdited === "A" && amountA) {
+        const inputA = parseFloat(amountA);
+        const computedB = (inputA * reserveB) / reserveA;
+        setAmountB(formatDecimalInput(computedB.toString(), 6));
+      }
+
+      if (lastEdited === "B" && amountB) {
+        const inputB = parseFloat(amountB);
+        const computedA = (inputB * reserveA) / reserveB;
+        setAmountA(formatDecimalInput(computedA.toString(), 6));
+      }
+    } catch (err) {
+      console.warn("Error al calcular proporción:", err);
+    }
+  }, [amountA, amountB, lastEdited, reserves]);
 
   const handleAddLiquidity = async () => {
     if (!isFormValid || !address) return;
@@ -153,17 +184,21 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
           type="number"
           step="any"
           value={amountA}
-          onChange={e => setAmountA(formatDecimalInput(e.target.value, 6))}
+          onChange={e => {
+            setAmountA(formatDecimalInput(e.target.value, 6));
+            setLastEdited("A");
+          }}
           disabled={isApproving || isAdding}
-          data-tooltip-id="tooltip-token-a"
-          data-tooltip-content="Cantidad del primer token a depositar"
         />
-        {/* MAX button */}
         <div className="flex justify-end mt-2">
           <button
             type="button"
             onClick={() => {
-              if (balanceA) setAmountA(formatDecimalInput(formatUnits(balanceA, 18), 6));
+              if (balanceA) {
+                const val = formatDecimalInput(formatUnits(balanceA, 18), 6);
+                setAmountA(val);
+                setLastEdited("A");
+              }
             }}
             disabled={!balanceA || isApproving || isAdding}
             className="px-3 py-1 rounded-full text-xs font-medium transition-colors duration-200 border border-primary text-primary hover:bg-primary hover:text-primary-content disabled:opacity-50 disabled:cursor-not-allowed"
@@ -171,8 +206,6 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
             MAX
           </button>
         </div>
-
-        <Tooltip id="tooltip-token-a" />
       </div>
 
       <div className="bg-base-300 p-4 rounded-xl">
@@ -183,17 +216,21 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
           type="number"
           step="any"
           value={amountB}
-          onChange={e => setAmountB(formatDecimalInput(e.target.value, 6))}
+          onChange={e => {
+            setAmountB(formatDecimalInput(e.target.value, 6));
+            setLastEdited("B");
+          }}
           disabled={isApproving || isAdding}
-          data-tooltip-id="tooltip-token-b"
-          data-tooltip-content="Cantidad del segundo token a depositar"
         />
-        {/* MAX button */}
         <div className="flex justify-end mt-2">
           <button
             type="button"
             onClick={() => {
-              if (balanceB) setAmountB(formatDecimalInput(formatUnits(balanceB, 18), 6));
+              if (balanceB) {
+                const val = formatDecimalInput(formatUnits(balanceB, 18), 6);
+                setAmountB(val);
+                setLastEdited("B");
+              }
             }}
             disabled={!balanceB || isApproving || isAdding}
             className="px-3 py-1 rounded-full text-xs font-medium transition-colors duration-200 border border-primary text-primary hover:bg-primary hover:text-primary-content disabled:opacity-50 disabled:cursor-not-allowed"
@@ -201,16 +238,7 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
             MAX
           </button>
         </div>
-
-        <Tooltip id="tooltip-token-b" />
       </div>
-
-      {/* {address && (!allowanceOkA || !allowanceOkB) && (
-        <p className="text-warning text-sm mt-2 flex items-center gap-1">
-          <FiAlertCircle size={16} />
-          Se solicitará la aprobación de los tokens antes de agregar liquidez.
-        </p>
-      )} */}
 
       <ConnectButton.Custom>
         {({ account, chain, openConnectModal, mounted }) => {
@@ -228,12 +256,9 @@ export const AddLiquidityWithApprovalForm = ({ tokenA, tokenB, spender }: Props)
               className="btn btn-primary w-full py-3 text-lg"
               disabled={!isFormValid || isApproving || isAdding}
               onClick={handleAddLiquidity}
-              data-tooltip-id="tooltip-submit"
-              data-tooltip-content="Agregar liquidez al pool"
             >
               {isApproving ? "Aprobando..." : isAdding ? "Agregando..." : "Agregar liquidez"}
               {(isApproving || isAdding) && <span className="loading loading-spinner loading-sm ml-2" />}
-              <Tooltip id="tooltip-submit" />
             </button>
           );
         }}
